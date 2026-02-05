@@ -1,0 +1,270 @@
+.doctor-shell .analytics-container {
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.doctor-shell .metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.doctor-shell .metric-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid #E2E8F0;
+}
+
+.doctor-shell .metric-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.doctor-shell .metric-title {
+  color: #64748B;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.doctor-shell .metric-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #1E293B;
+  margin: 5px 0;
+}
+
+.doctor-shell .metric-change {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.doctor-shell .metric-change.positive {
+  color: #10B981;
+}
+
+.doctor-shell .metric-change.negative {
+  color: #EF4444;
+}
+
+.doctor-shell .chart-container {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 30px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid #E2E8F0;
+}
+
+.doctor-shell .chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.doctor-shell .chart-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1E293B;
+}
+
+.doctor-shell .chart-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.doctor-shell .time-filter {
+  display: flex;
+  background: #F8FAFC;
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.doctor-shell .time-btn {
+  padding: 6px 12px;
+  border: none;
+  background: none;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #64748B;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.doctor-shell .time-btn.active {
+  background: white;
+  color: #3B82F6;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.doctor-shell .chart-wrapper {
+  position: relative;
+  height: 300px;
+  width: 100%;
+}
+
+.doctor-shell .risk-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid #E2E8F0;
+}
+
+.doctor-shell .risk-table th,
+.doctor-shell .risk-table td {
+  padding: 15px 20px;
+  text-align: left;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.doctor-shell .risk-table th {
+  background: #F8FAFC;
+  color: #64748B;
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.doctor-shell .risk-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.doctor-shell .risk-table tbody tr:hover {
+  background: #F8FAFC;
+}
+
+.doctor-shell .patient-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.doctor-shell .patient-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #E0F2FE;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0369A1;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.doctor-shell .patient-name {
+  font-weight: 500;
+  color: #1E293B;
+  margin-bottom: 2px;
+}
+
+.doctor-shell .patient-id {
+  font-size: 0.8rem;
+  color: #64748B;
+}
+
+.doctor-shell .risk-level {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 50px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.doctor-shell .risk-low {
+  background: #D1FAE5;
+  color: #065F46;
+}
+
+.doctor-shell .risk-medium {
+  background: #FEF3C7;
+  color: #92400E;
+}
+
+.doctor-shell .risk-high {
+  background: #FEE2E2;
+  color: #B91C1C;
+}
+
+.doctor-shell .risk-score {
+  font-weight: 600;
+  color: #1E293B;
+}
+
+.doctor-shell .trend-icon {
+  margin-left: 5px;
+}
+
+.doctor-shell .trend-up {
+  color: #EF4444;
+}
+
+.doctor-shell .trend-down {
+  color: #10B981;
+}
+
+.doctor-shell .action-btn {
+  background: none;
+  border: none;
+  color: #64748B;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.doctor-shell .action-btn:hover {
+  background: #F1F5F9;
+  color: #3B82F6;
+}
+
+.doctor-shell .table-responsive {
+  width: 100%;
+}
+
+@media (max-width: 1024px) {
+  .doctor-shell .metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .doctor-shell .chart-wrapper {
+    height: 250px;
+  }
+}
+
+@media (max-width: 768px) {
+  .doctor-shell .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .doctor-shell .chart-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .doctor-shell .time-filter {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .doctor-shell .risk-table {
+    display: block;
+    overflow-x: auto;
+  }
+}

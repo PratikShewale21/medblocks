@@ -1,0 +1,142 @@
+/* Doctor Dashboard Styles */
+/* Container + sidebar + header styles live in DoctorLayout.css */
+
+/* Grid Layout */
+.doctor-shell .dashboard-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 25px;
+}
+
+/* Section Cards */
+.doctor-shell .card {
+    background: var(--white);
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    margin-bottom: 25px;
+}
+
+.doctor-shell .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.doctor-shell .card-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Risk Alerts List (ML Feature) */
+.doctor-shell .patient-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    border-bottom: 1px solid #F1F5F9;
+}
+
+.doctor-shell .patient-row:last-child {
+    border: none;
+}
+
+.doctor-shell .risk-score {
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 0.8rem;
+}
+
+.doctor-shell .high-risk {
+    background: #FEE2E2;
+    color: var(--risk);
+}
+
+.doctor-shell .btn-view {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+/* Access Requests (Blockchain Feature) */
+.doctor-shell .status-pill {
+    font-size: 0.7rem;
+    padding: 3px 10px;
+    border-radius: 50px;
+    font-weight: 700;
+}
+
+.doctor-shell .pending {
+    background: #FEF3C7;
+    color: #92400E;
+}
+
+.doctor-shell .approved {
+    background: #D1FAE5;
+    color: #065F46;
+}
+
+/* Summary Area (NLP Feature) */
+.doctor-shell .summary-box {
+    background: #EEF2FF;
+    border-left: 4px solid var(--accent);
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 10px;
+}
+
+.doctor-shell .hash-code {
+    font-family: monospace;
+    font-size: 0.7rem;
+    color: #94A3B8;
+    margin-top: 5px;
+    display: block;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .doctor-shell .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .doctor-shell .sidebar {
+        width: 240px;
+    }
+}
+
+@media (max-width: 768px) {
+    .doctor-shell {
+        flex-direction: column;
+        height: auto;
+        overflow: visible;
+    }
+    
+    .doctor-shell .sidebar {
+        width: 100%;
+        padding: 15px;
+    }
+    
+    .doctor-shell .main {
+        padding: 20px;
+    }
+    
+    .doctor-shell .search-bar {
+        width: 100%;
+    }
+    
+    .doctor-shell .header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+}

@@ -1,0 +1,159 @@
+/* Patient Dashboard Styles */
+:root {
+    --primary: #3B82F6;
+    --success: #10B981;
+    --bg: #F8FAFC;
+    --text: #1E293B;
+    --text-light: #64748B;
+    --border: #E2E8F0;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', sans-serif;
+}
+
+body {
+    background-color: var(--bg);
+    color: var(--text);
+}
+
+/* --- Hero Section --- */
+.hero {
+    padding: 40px 8%;
+    background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+    color: white;
+    border-bottom-left-radius: 40px;
+    border-bottom-right-radius: 40px;
+}
+
+.hero h1 {
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
+
+.status-strip {
+    display: flex;
+    gap: 20px;
+    font-size: 0.8rem;
+    opacity: 0.9;
+}
+
+.status-strip i {
+    margin-right: 6px;
+}
+
+/* --- Bento Grid --- */
+.main-grid {
+    margin: -40px 8% 40px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.card-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.card {
+    background: white;
+    padding: 30px;
+    border-radius: 24px;
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    height: 100%;
+}
+
+.card-link:hover .card {
+    transform: translateY(-5px);
+    border-color: var(--primary);
+    box-shadow: 0 15px 20px -5px rgba(0,0,0,0.1);
+}
+
+.card i {
+    font-size: 2.2rem;
+    margin-bottom: 20px;
+    display: block;
+}
+
+.card h3 {
+    margin-bottom: 10px;
+    font-size: 1.2rem;
+}
+
+.card p {
+    font-size: 0.85rem;
+    color: #64748B;
+    line-height: 1.5;
+}
+
+/* --- Activity Feed --- */
+.feed-section {
+    padding: 0 8% 60px;
+}
+
+.feed-card {
+    background: white;
+    border-radius: 20px;
+    padding: 20px;
+    border: 1px solid var(--border);
+}
+
+.feed-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 15px 0;
+    border-bottom: 1px solid #F1F5F9;
+    align-items: center;
+}
+
+.feed-item:last-child {
+    border-bottom: none;
+}
+
+.tag {
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 4px 8px;
+    border-radius: 6px;
+    text-transform: uppercase;
+}
+
+.tag-ml {
+    background: #DBEAFE;
+    color: #1E40AF;
+}
+
+.tag-bc {
+    background: #D1FAE5;
+    color: #065F46;
+}
+
+/* --- Responsive Design --- */
+@media (max-width: 768px) {
+    .hero {
+        padding: 30px 5%;
+    }
+    
+    .hero h1 {
+        font-size: 1.5rem;
+    }
+    
+    .status-strip {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .main-grid {
+        margin: -30px 5% 30px;
+    }
+    
+    .feed-section {
+        padding: 0 5% 40px;
+    }
+}

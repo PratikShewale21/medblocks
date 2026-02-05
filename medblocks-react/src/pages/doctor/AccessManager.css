@@ -1,0 +1,211 @@
+.doctor-shell .access-container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.doctor-shell .access-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.doctor-shell .access-actions {
+  display: flex;
+  gap: 15px;
+}
+
+.doctor-shell .btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+  border: none;
+}
+
+.doctor-shell .btn-primary {
+  background: #3B82F6;
+  color: white;
+}
+
+.doctor-shell .btn-primary:hover {
+  background: #2563EB;
+}
+
+.doctor-shell .btn-outline {
+  background: white;
+  border: 1px solid #E2E8F0;
+  color: #3B82F6;
+}
+
+.doctor-shell .btn-outline:hover {
+  background: #F8FAFC;
+  border-color: #3B82F6;
+}
+
+.doctor-shell .access-tabs {
+  display: flex;
+  border-bottom: 1px solid #E2E8F0;
+  margin-bottom: 20px;
+  gap: 5px;
+}
+
+.doctor-shell .tab {
+  padding: 12px 20px;
+  cursor: pointer;
+  font-weight: 500;
+  color: #64748B;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.doctor-shell .tab.active {
+  color: #3B82F6;
+  border-bottom-color: #3B82F6;
+}
+
+.doctor-shell .tab:hover:not(.active) {
+  color: #334155;
+  border-bottom-color: #CBD5E1;
+}
+
+.doctor-shell .access-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.doctor-shell .access-table th,
+.doctor-shell .access-table td {
+  padding: 15px 20px;
+  text-align: left;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.doctor-shell .access-table th {
+  background: #F8FAFC;
+  color: #64748B;
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.doctor-shell .access-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.doctor-shell .access-table tbody tr:hover {
+  background: #F8FAFC;
+}
+
+.doctor-shell .user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.doctor-shell .user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #E0F2FE;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0369A1;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.doctor-shell .user-name {
+  font-weight: 500;
+  color: #1E293B;
+  margin-bottom: 2px;
+}
+
+.doctor-shell .user-email {
+  font-size: 0.8rem;
+  color: #64748B;
+}
+
+.doctor-shell .status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 50px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.doctor-shell .status-active {
+  background: #D1FAE5;
+  color: #065F46;
+}
+
+.doctor-shell .status-pending {
+  background: #FEF3C7;
+  color: #92400E;
+}
+
+.doctor-shell .status-revoked {
+  background: #FEE2E2;
+  color: #B91C1C;
+}
+
+.doctor-shell .permission-tag {
+  display: inline-block;
+  padding: 4px 10px;
+  background: #F1F5F9;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  color: #475569;
+  margin: 2px;
+}
+
+.doctor-shell .action-btn {
+  background: none;
+  border: none;
+  color: #64748B;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.doctor-shell .action-btn:hover {
+  background: #F1F5F9;
+  color: #3B82F6;
+}
+
+.doctor-shell .table-responsive {
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .doctor-shell .access-table {
+    display: block;
+    overflow-x: auto;
+  }
+
+  .doctor-shell .access-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .doctor-shell .btn {
+    flex: 1;
+    justify-content: center;
+  }
+}

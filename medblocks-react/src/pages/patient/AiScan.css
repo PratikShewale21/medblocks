@@ -1,0 +1,237 @@
+:root { 
+    --primary: #3B82F6; 
+    --bc: #10B981; 
+    --bg: #F8FAFC; 
+    --text: #1E293B; 
+    --danger: #EF4444;
+}
+
+* { 
+    box-sizing: border-box; 
+    margin: 0; 
+    padding: 0; 
+    font-family: 'Inter', sans-serif; 
+}
+
+body { 
+    background-color: var(--bg); 
+    color: var(--text); 
+}
+
+/* Header & Hero */
+header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    padding: 20px 8%; 
+    background: white; 
+    border-bottom: 1px solid #E2E8F0; 
+}
+
+.logo { 
+    font-size: 1.4rem; 
+    font-weight: 800; 
+    color: var(--primary); 
+    text-decoration: none; 
+}
+
+.wallet { 
+    background: #F1F5F9; 
+    padding: 8px 16px; 
+    border-radius: 50px; 
+    font-size: 0.8rem; 
+    font-weight: 600; 
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.hero { 
+    padding: 60px 8% 80px; 
+    background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); 
+    color: white; 
+}
+
+.hero-subtitle {
+    opacity: 0.8; 
+    font-size: 0.9rem; 
+    margin-top: 5px;
+}
+
+/* Layout Container */
+.container { 
+    margin: -60px 15% 40px; 
+    display: grid; 
+    grid-template-columns: 1fr 1.5fr; 
+    gap: 30px; 
+}
+
+/* Selection Card */
+.selection-card { 
+    background: white; 
+    padding: 30px; 
+    border-radius: 24px; 
+    box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); 
+}
+
+.selection-card h3 {
+    margin-bottom: 20px;
+}
+
+.doc-item { 
+    padding: 15px; 
+    border: 1px solid #F1F5F9; 
+    border-radius: 12px; 
+    margin-bottom: 10px; 
+    cursor: pointer; 
+    display: flex; 
+    align-items: center; 
+    gap: 12px; 
+    transition: 0.2s; 
+}
+
+.doc-item:hover { 
+    border-color: var(--primary); 
+    background: #EFF6FF; 
+}
+
+.doc-item.selected { 
+    border-color: var(--primary); 
+    background: #EFF6FF; 
+    box-shadow: 0 0 0 2px var(--primary); 
+}
+
+.doc-name { font-weight: 700; font-size: 0.9rem; }
+.doc-meta { font-size: 0.7rem; color: #94A3B8; }
+.icon-red { color: var(--danger); }
+
+/* Analysis Card */
+.analysis-card { 
+    background: white; 
+    padding: 35px; 
+    border-radius: 24px; 
+    box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); 
+}
+
+.analysis-subtitle { 
+    font-size: 0.8rem; 
+    color: #64748B; 
+    margin-bottom: 10px;
+}
+
+.extraction-grid { 
+    display: grid; 
+    grid-template-columns: 1fr 1fr; 
+    gap: 15px; 
+    margin-top: 20px; 
+}
+
+.data-point { 
+    background: #F8FAFC; 
+    padding: 15px; 
+    border-radius: 12px; 
+    border: 1px solid #E2E8F0; 
+}
+
+.data-label { 
+    font-size: 0.7rem; 
+    font-weight: 800; 
+    color: #94A3B8; 
+    text-transform: uppercase; 
+}
+
+.data-value { 
+    font-size: 1.1rem; 
+    font-weight: 700; 
+    color: var(--text); 
+}
+
+/* Button & Results */
+.btn-process { 
+    width: 100%; 
+    background: var(--primary); 
+    color: white; 
+    padding: 18px; 
+    border: none; 
+    border-radius: 15px; 
+    font-size: 1rem; 
+    font-weight: 700; 
+    cursor: pointer; 
+    margin-top: 25px; 
+    transition: 0.3s; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn-process:hover:not(:disabled) { 
+    background: #1D4ED8; 
+    transform: translateY(-2px); 
+}
+
+.btn-process:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.result-overlay { 
+    margin-top: 30px; 
+    padding: 25px; 
+    border-radius: 20px; 
+    background: #ECFDF5; 
+    border: 2px solid #D1FAE5; 
+    display: none; 
+}
+
+.status-badge { 
+    background: var(--bc); 
+    color: white; 
+    font-size: 0.65rem; 
+    padding: 4px 10px; 
+    border-radius: 50px; 
+    font-weight: 800; 
+    margin-bottom: 10px; 
+    display: inline-block; 
+}
+
+.risk-score { 
+    font-size: 1.5rem; 
+    font-weight: 800; 
+    color: #065F46; 
+    margin-bottom: 10px;
+}
+
+.verification-text { 
+    font-size: 0.85rem; 
+    color: #065F46; 
+    margin-top: 10px; 
+    opacity: 0.8; 
+    line-height: 1.5;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .container {
+        grid-template-columns: 1fr;
+        margin: -60px 8% 40px;
+    }
+}
+
+@media (max-width: 768px) {
+    header {
+        padding: 15px 5%;
+    }
+    
+    .hero {
+        padding: 40px 5% 60px;
+    }
+    
+    .container {
+        margin: -40px 5% 30px;
+    }
+    
+    .extraction-grid {
+        grid-template-columns: 1fr;
+    }
+}

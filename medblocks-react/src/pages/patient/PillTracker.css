@@ -1,0 +1,310 @@
+:root { 
+    --primary: #3B82F6; 
+    --bc: #10B981; 
+    --bg: #F8FAFC; 
+    --text: #1E293B; 
+    --warning: #F59E0B;
+}
+
+* { 
+    box-sizing: border-box; 
+    margin: 0; 
+    padding: 0; 
+    font-family: 'Inter', sans-serif; 
+}
+
+body { 
+    background-color: var(--bg); 
+    color: var(--text); 
+}
+
+/* Header & Hero */
+header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    padding: 20px 8%; 
+    background: white; 
+    border-bottom: 1px solid #E2E8F0; 
+}
+
+.logo { 
+    font-size: 1.4rem; 
+    font-weight: 800; 
+    color: var(--primary); 
+    text-decoration: none; 
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.model-badge {
+    background: #EFF6FF;
+    color: var(--primary);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.wallet { 
+    background: #F1F5F9; 
+    padding: 8px 16px; 
+    border-radius: 50px; 
+    font-size: 0.8rem; 
+    font-weight: 600; 
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.logout-btn {
+    background: #FEE2E2;
+    color: #DC2626;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+
+.logout-btn:hover {
+    background: #FECACA;
+}
+
+.hero { 
+    padding: 60px 8% 80px; 
+    background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); 
+    color: white; 
+}
+
+.hero-subtitle {
+    opacity: 0.8; 
+    font-size: 0.9rem; 
+    margin-top: 5px;
+}
+
+/* Layout Container */
+.container { 
+    margin: -60px 8% 40px; 
+    display: grid; 
+    gap: 30px; 
+}
+
+.pill-container {
+    grid-template-columns: 2fr 1fr;
+}
+
+/* Card Styles */
+.card {
+    background: white;
+    padding: 30px;
+    border-radius: 24px;
+    box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+}
+
+.card-title {
+    margin-bottom: 25px;
+}
+
+/* Pill Item Styles */
+.pill-item { 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between; 
+    padding: 20px; 
+    border: 1px solid #F1F5F9; 
+    border-radius: 16px; 
+    margin-bottom: 15px; 
+    transition: 0.3s; 
+}
+
+.pill-item:hover { 
+    border-color: var(--primary); 
+    background: #F8FAFC; 
+}
+
+.pill-item.taken {
+    opacity: 0.6;
+}
+
+.pill-info { 
+    display: flex; 
+    align-items: center; 
+    gap: 20px; 
+}
+
+.pill-icon { 
+    width: 50px; 
+    height: 50px; 
+    border-radius: 12px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-size: 1.4rem; 
+}
+
+.pill-name { font-weight: 700; }
+.pill-meta { font-size: 0.8rem; color: #64748B; }
+
+.upcoming-tag {
+    font-size: 0.75rem; 
+    font-weight: 700; 
+    color: #94A3B8;
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: #F1F5F9;
+}
+
+/* AI Sidebar (Dark Mode) */
+.ai-sidebar { 
+    background: #1E293B; 
+    color: white; 
+    padding: 30px; 
+    border-radius: 24px; 
+    align-self: start; 
+}
+
+.sidebar-label { 
+    color: #94A3B8; 
+    font-size: 0.7rem; 
+    text-transform: uppercase; 
+    letter-spacing: 1px; 
+}
+
+.probability-val { 
+    font-size: 1.8rem; 
+    font-weight: 800; 
+    margin: 10px 0; 
+}
+
+.sidebar-text { 
+    font-size: 0.85rem; 
+    opacity: 0.8; 
+    line-height: 1.5; 
+}
+
+.risk-meter { 
+    height: 8px; 
+    width: 100%; 
+    background: #334155; 
+    border-radius: 10px; 
+    margin: 15px 0; 
+    overflow: hidden; 
+}
+
+.risk-fill { 
+    height: 100%; 
+    background: var(--warning); 
+    width: 65%; 
+}
+
+.suggestion-box { 
+    background: #334155; 
+    padding: 15px; 
+    border-radius: 12px; 
+    margin-top: 20px; 
+}
+
+.suggestion-header { 
+    font-size: 0.75rem; 
+    font-weight: 700; 
+    display: flex; 
+    align-items: center; 
+    gap: 8px; 
+}
+
+.suggestion-text { 
+    font-size: 0.75rem; 
+    margin-top: 5px; 
+    opacity: 0.7; 
+}
+
+/* Button Styles */
+.btn-log { 
+    background: var(--bc); 
+    color: white; 
+    border: none; 
+    padding: 12px 24px; 
+    border-radius: 12px; 
+    font-weight: 700; 
+    cursor: pointer; 
+    transition: 0.3s; 
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-log:hover:not(:disabled) { 
+    transform: scale(1.05); 
+    background: #059669; 
+}
+
+.btn-log:disabled {
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Icon Backgrounds */
+.icon-warning-bg { background: #FFF7ED; color: var(--warning); }
+.icon-primary-bg { background: #E0F2FE; color: var(--primary); }
+.icon-warning { color: var(--warning); }
+
+/* Animation */
+.fa-spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .pill-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    header {
+        padding: 15px 5%;
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+    
+    .header-actions {
+        justify-content: space-between;
+    }
+    
+    .hero {
+        padding: 40px 5% 60px;
+    }
+    
+    .container {
+        margin: -40px 5% 30px;
+    }
+    
+    .pill-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .pill-info {
+        gap: 15px;
+    }
+}

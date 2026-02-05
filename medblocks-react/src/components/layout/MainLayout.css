@@ -1,0 +1,187 @@
+/* MainLayout Styles */
+:root {
+    --primary: #3B82F6;
+    --success: #10B981;
+    --bg: #F8FAFC;
+    --text: #1E293B;
+    --text-light: #64748B;
+    --border: #E2E8F0;
+    --danger: #DC2626;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', sans-serif;
+}
+
+body {
+    background-color: var(--bg);
+    color: var(--text);
+}
+
+/* --- Minimal Header --- */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 8%;
+    background: white;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.logo {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--primary);
+    text-decoration: none;
+}
+
+.logo span {
+    color: var(--success);
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.wallet {
+    background: #F1F5F9;
+    padding: 8px 16px;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.wallet i {
+    color: var(--primary);
+}
+
+.logout-btn {
+    background: #FEE2E2;
+    color: var(--danger);
+    border: none;
+    padding: 8px 16px;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+
+.logout-btn:hover {
+    background: #FECACA;
+}
+
+/* --- Hero Section --- */
+.hero {
+    padding: 40px 8%;
+    background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+    color: white;
+    border-bottom-left-radius: 40px;
+    border-bottom-right-radius: 40px;
+}
+
+.hero h1 {
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
+
+.status-strip {
+    display: flex;
+    gap: 20px;
+    font-size: 0.8rem;
+    opacity: 0.9;
+}
+
+.status-strip i {
+    margin-right: 6px;
+}
+
+/* --- Main Content --- */
+main {
+    padding: 0 8%;
+}
+
+/* --- Activity Feed --- */
+.feed-section {
+    padding: 40px 8% 60px;
+}
+
+.feed-card {
+    background: white;
+    border-radius: 20px;
+    padding: 20px;
+    border: 1px solid var(--border);
+}
+
+.feed-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 15px 0;
+    border-bottom: 1px solid #F1F5F9;
+    align-items: center;
+}
+
+.feed-item:last-child {
+    border-bottom: none;
+}
+
+.tag {
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 4px 8px;
+    border-radius: 6px;
+    text-transform: uppercase;
+}
+
+.tag-ml {
+    background: #DBEAFE;
+    color: #1E40AF;
+}
+
+.tag-bc {
+    background: #D1FAE5;
+    color: #065F46;
+}
+
+/* --- Responsive Design --- */
+@media (max-width: 768px) {
+    header {
+        padding: 15px 5%;
+    }
+    
+    .hero {
+        padding: 30px 5%;
+    }
+    
+    .hero h1 {
+        font-size: 1.5rem;
+    }
+    
+    .status-strip {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    main {
+        padding: 0 5%;
+    }
+    
+    .feed-section {
+        padding: 30px 5% 40px;
+    }
+}

@@ -1,0 +1,124 @@
+.doctor-shell {
+  --sidebar: #1E293B;
+  --bg: #F1F5F9;
+  --accent: #6366F1;
+  --risk: #EF4444;
+  --success: #10B981;
+  --white: #ffffff;
+  --border: #E2E8F0;
+
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.doctor-shell .sidebar {
+  width: 280px;
+  background: var(--sidebar);
+  color: white;
+  padding: 25px;
+  display: flex;
+  flex-direction: column;
+}
+
+.doctor-shell .logo {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-bottom: 40px;
+  color: var(--accent);
+}
+
+.doctor-shell .nav-link {
+  padding: 12px 15px;
+  margin-bottom: 8px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: 0.3s;
+  color: #94A3B8;
+  text-decoration: none;
+  width: 100%;
+}
+
+.doctor-shell .nav-link.active {
+  background: var(--accent);
+  color: white;
+}
+
+.doctor-shell .main {
+  flex: 1;
+  padding: 30px;
+  overflow-y: auto;
+}
+
+.doctor-shell .header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.doctor-shell .search-bar {
+  background: var(--white);
+  border: 1px solid var(--border);
+  padding: 10px 20px;
+  border-radius: 12px;
+  width: 400px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.doctor-shell .search-bar input {
+  border: none;
+  outline: none;
+  width: 100%;
+  background: transparent;
+}
+
+.doctor-shell .wallet {
+  background: #F1F5F9;
+  padding: 8px 16px;
+  border-radius: 50px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (max-width: 1024px) {
+  .doctor-shell .sidebar {
+    width: 240px;
+  }
+}
+
+@media (max-width: 768px) {
+  .doctor-shell {
+    flex-direction: column;
+    height: auto;
+    overflow: visible;
+  }
+
+  .doctor-shell .sidebar {
+    width: 100%;
+    padding: 15px;
+  }
+
+  .doctor-shell .main {
+    padding: 20px;
+  }
+
+  .doctor-shell .search-bar {
+    width: 100%;
+  }
+
+  .doctor-shell .header {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+  }
+}
