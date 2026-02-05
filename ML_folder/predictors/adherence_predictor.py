@@ -7,18 +7,25 @@ scaler = joblib.load("models/adherence_scaler.pkl")
 
 def predict_adherence(data):
     """
-    data: object with attributes
+    data can be:
+    - Pydantic object (from FastAPI)
+    - list / tuple (for testing)
     """
 
-    # Arrange input in SAME ORDER as training
-    input_data = np.array([
-        data.missed_doses_last_7_days,
-        data.avg_delay_minutes,
-        data.adherence_rate_30_days
-    ]).reshape(1, -1)
+    # Handle both object & list input safely
+    if hasattr(data, "missed_doses_last_7_days"):
+        input_data = [
+            data.missed_doses_last_7_days,
+            data.avg_delay_minutes,
+            data.adherence_rate_30_days
+        ]
+    else:
+        input_data = data  # assume list-like
+
+    input_array = np.array(input_data).reshape(1, -1)
 
     # Scale input
-    scaled_data = scaler.transform(input_data)
+    scaled_data = scaler.transform(input_array)
 
     # Prediction
     prediction = int(model.predict(scaled_data)[0])
