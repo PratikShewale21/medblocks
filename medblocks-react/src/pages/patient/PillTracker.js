@@ -1,162 +1,79 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { 
-  FaCapsules, 
-  FaPills, 
-  FaRobot, 
-  FaLink, 
-  FaSignOutAlt,
-  FaLightbulb,
-  FaCheck,
-  FaSpinner
-} from 'react-icons/fa';
-import './PillTracker.css';
+import React, { useState } from "react";
+import "./PillTracker.css";
+import { predictAdherence } from "../../api/adherenceApi";
 
 const PillTracker = () => {
-  const [medications, setMedications] = useState([
-    {
-      id: 1,
-      name: 'Metformin (500mg)',
-      time: '09:00 AM',
-      instructions: 'Before Breakfast',
-      taken: false,
-      upcoming: false,
-      icon: 'capsules',
-      iconBg: 'icon-warning-bg'
-    },
-    {
-      id: 2,
-      name: 'Lisinopril (10mg)',
-      time: '08:00 PM',
-      instructions: 'With Water',
-      taken: false,
-      upcoming: true,
-      icon: 'pills',
-      iconBg: 'icon-primary-bg'
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState(null);
+
+  // 🔹 Example state (later this comes from DB / user history)
+  const [adherenceData, setAdherenceData] = useState({
+    missed_doses_last_7_days: 2,
+    avg_delay_minutes: 45,
+    adherence_rate_30_days: 68,
+  });
+
+  const handleCheckAdherence = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await predictAdherence(adherenceData);
+      setResult(response);
+    } catch (err) {
+      setError("Unable to fetch adherence prediction");
+    } finally {
+      setLoading(false);
     }
-  ]);
-
-  const handleLogMedication = (medId) => {
-    // Show loading state
-    setMedications(prev => prev.map(med => 
-      med.id === medId ? { ...med, loading: true } : med
-    ));
-
-    // Simulate API call
-    setTimeout(() => {
-      setMedications(prev => prev.map(med => 
-        med.id === medId ? { 
-          ...med, 
-          taken: true, 
-          loading: false 
-        } : med
-      ));
-    }, 1000);
   };
 
   return (
-    <>
-      <header>
-        <Link to="/patient" className="logo">
-          Med<span>Blocks</span>
-        </Link>
-        <div className="header-actions">
-          <div className="model-badge">
-            <FaRobot style={{ color: '#3B82F6' }} />
-            Behavioral Engine Active
-          </div>
-          <div className="wallet">
-            <FaLink />
-            <span>0x71C...A4f</span>
-          </div>
-          <button className="logout-btn">
-            <FaSignOutAlt />
-            Logout
-          </button>
-        </div>
-      </header>
+    <div className="pill-tracker-container">
+      <h2>Pill Tracker</h2>
 
-      <section className="hero">
-        <h1>Pill Tracker</h1>
-        <p className="hero-subtitle">Smart reminders powered by your historical adherence patterns.</p>
-      </section>
+      {/* Medication Card */}
+      <div className="pill-card">
+        <h3>Metformin (500mg)</h3>
+        <p>Time: 9:00 AM • Before Breakfast</p>
 
-      <main className="container pill-container">
-        <div className="card">
-          <h3 className="card-title">Today's Schedule</h3>
-          
-          {medications.map((med) => (
-            <div key={med.id} className="pill-item">
-              <div className="pill-info">
-                <div className={`pill-icon ${med.iconBg}`}>
-                  {med.icon === 'capsules' ? (
-                    <FaCapsules />
-                  ) : (
-                    <FaPills />
-                  )}
-                </div>
-                <div>
-                  <div className="pill-name">{med.name}</div>
-                  <div className="pill-meta">
-                    Time: {med.time} • {med.instructions}
-                  </div>
-                </div>
-              </div>
-              
-              {med.upcoming ? (
-                <div className="upcoming-tag">UPCOMING</div>
-              ) : (
-                <button 
-                  className="btn-log"
-                  onClick={() => handleLogMedication(med.id)}
-                  disabled={med.taken || med.loading}
-                  style={{
-                    background: med.taken ? '#D1FAE5' : undefined,
-                    color: med.taken ? '#065F46' : undefined
-                  }}
-                >
-                  {med.loading ? (
-                    <>
-                      <FaSpinner className="fa-spin" />
-                      Logging...
-                    </>
-                  ) : med.taken ? (
-                    <>
-                      <FaCheck />
-                      Taken
-                    </>
-                  ) : (
-                    'Mark as Taken'
-                  )}
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
+        <button className="taken-btn" onClick={handleCheckAdherence}>
+          Mark as Taken
+        </button>
+      </div>
 
-        <aside className="ai-sidebar">
-          <h4 className="sidebar-label">AI Adherence Analysis</h4>
-          <div className="probability-val">65% Prob.</div>
-          <p className="sidebar-text">
-            Our model predicts a high chance of a missed dose tonight based on your late-night activity patterns.
+      {/* Loading */}
+      {loading && <p>Analyzing adherence pattern...</p>}
+
+      {/* Error */}
+      {error && <p className="error">{error}</p>}
+
+      {/* Result */}
+      {result && (
+        <div className={`adherence-result ${result.risk_level.toLowerCase()}`}>
+          <h3>AI Adherence Analysis</h3>
+
+          <p>
+            <strong>Miss Next Dose:</strong>{" "}
+            {result.will_miss_next_dose ? "YES" : "NO"}
           </p>
-          
-          <div className="risk-meter">
-            <div className="risk-fill"></div>
-          </div>
-          
-          <div className="suggestion-box">
-            <div className="suggestion-header">
-              <FaLightbulb className="icon-warning" />
-              Smart Suggestion
+
+          <p>
+            <strong>Risk Percentage:</strong> {result.risk_percentage}%
+          </p>
+
+          <p>
+            <strong>Risk Level:</strong> {result.risk_level}
+          </p>
+
+          {result.risk_level !== "LOW" && (
+            <div className="alert-box">
+              ⚠️ Smart Suggestion: Keep your medicine visible and enable reminders.
             </div>
-            <p className="suggestion-text">
-              Keep your evening meds on your bedside table to increase adherence by 40%.
-            </p>
-          </div>
-        </aside>
-      </main>
-    </>
+          )}
+        </div>
+      )}
+    </div>
   );
 };
 

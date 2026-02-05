@@ -308,3 +308,51 @@ header {
         gap: 15px;
     }
 }
+.pill-tracker-container {
+  padding: 20px;
+}
+
+.pill-card {
+  background: #ffffff;
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
+.taken-btn {
+  background-color: #22c55e;
+  color: white;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.adherence-result {
+  margin-top: 20px;
+  padding: 15px;
+  border-radius: 10px;
+}
+
+.adherence-result.low {
+  background: #dcfce7;
+}
+
+.adherence-result.moderate {
+  background: #fef9c3;
+}
+
+.adherence-result.high {
+  background: #fee2e2;
+}
+
+.alert-box {
+  margin-top: 10px;
+  padding: 10px;
+  background: #fde047;
+  border-radius: 6px;
+}
+
+.error {
+  color: red;
+}
