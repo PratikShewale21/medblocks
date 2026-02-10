@@ -190,3 +190,61 @@ def add_record(
     save_filename(cid, filename)
 
     return tx_hash.hex()
+
+def grant_temporary_access(
+    patient_address: str,
+    doctor_address: str,
+    duration_seconds: int
+) -> str:
+
+    if not Web3.is_address(patient_address) or not Web3.is_address(doctor_address):
+        raise ValueError("Invalid Ethereum address")
+
+    nonce = w3.eth.get_transaction_count(BACKEND_WALLET, "pending")
+
+    tx = access_control_contract.functions.grantTemporaryAccess(
+        Web3.to_checksum_address(doctor_address),
+        duration_seconds
+    ).build_transaction({
+        "from": BACKEND_WALLET,
+        "nonce": nonce,
+        "gas": 200000,
+        "maxFeePerGas": w3.to_wei("30", "gwei"),
+        "maxPriorityFeePerGas": w3.to_wei("2", "gwei"),
+    })
+
+    signed_tx = w3.eth.account.sign_transaction(tx, BACKEND_PRIVATE_KEY)
+
+    tx_hash = w3.eth.send_raw_transaction(
+        signed_tx.raw_transaction
+    )
+
+    return tx_hash.hex()
+
+def revoke_access(
+    patient_address: str,
+    doctor_address: str
+) -> str:
+
+    if not Web3.is_address(patient_address) or not Web3.is_address(doctor_address):
+        raise ValueError("Invalid Ethereum address")
+
+    nonce = w3.eth.get_transaction_count(BACKEND_WALLET, "pending")
+
+    tx = access_control_contract.functions.revokeAccess(
+        Web3.to_checksum_address(doctor_address)
+    ).build_transaction({
+        "from": BACKEND_WALLET,
+        "nonce": nonce,
+        "gas": 200000,
+        "maxFeePerGas": w3.to_wei("30", "gwei"),
+        "maxPriorityFeePerGas": w3.to_wei("2", "gwei"),
+    })
+
+    signed_tx = w3.eth.account.sign_transaction(tx, BACKEND_PRIVATE_KEY)
+
+    tx_hash = w3.eth.send_raw_transaction(
+        signed_tx.raw_transaction
+    )
+
+    return tx_hash.hex()
