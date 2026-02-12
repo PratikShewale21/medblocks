@@ -1,8 +1,13 @@
+/* Copy variables and base styles to match PillTracker/ShareAccess exactly */
 :root { 
     --primary: #3B82F6; 
+    --primary-dark: #2563EB;
     --bc: #10B981; 
     --bg: #F8FAFC; 
     --text: #1E293B; 
+    --text-light: #64748B;
+    --border: #E2E8F0;
+    --danger: #EF4444;
 }
 
 * { 
@@ -17,14 +22,14 @@ body {
     color: var(--text); 
 }
 
-/* Navigation Header */
+/* Header & Hero */
 header { 
     display: flex; 
     justify-content: space-between; 
     align-items: center; 
     padding: 20px 8%; 
     background: white; 
-    border-bottom: 1px solid #E2E8F0; 
+    border-bottom: 1px solid var(--border); 
 }
 
 .logo { 
@@ -32,6 +37,14 @@ header {
     font-weight: 800; 
     color: var(--primary); 
     text-decoration: none; 
+}
+
+.logo span { color: var(--text); }
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
 }
 
 .wallet { 
@@ -45,155 +58,199 @@ header {
     gap: 8px;
 }
 
-/* Hero Header */
+.logout-btn {
+    background: #FEE2E2;
+    color: #B91C1C;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+
+.logout-btn:hover {
+    background: #FECACA;
+}
+
 .hero { 
     padding: 60px 8% 80px; 
     background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); 
     color: white; 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center; 
 }
 
-.hero h1 { 
-    font-size: 2.2rem; 
+.hero-subtitle {
+    opacity: 0.85; 
+    font-size: 1rem; 
+    margin-top: 8px;
+    max-width: 600px;
 }
 
-.btn-upload { 
-    background: white; 
-    color: var(--primary); 
-    padding: 12px 24px; 
-    border-radius: 12px; 
-    font-weight: 700; 
-    border: none; 
-    cursor: pointer; 
-    transition: 0.3s; 
+/* Layout Container */
+.container { 
+    margin: -60px 8% 40px; 
+}
+
+.vault-container {
+    display: grid;
+    gap: 20px;
+    max-width: 900px;
+    /* Force positive margin to push cards down below the hero like PillTracker */
+    margin: 40px auto !important; 
+    padding: 0 20px;
+}
+
+/* Card Styles */
+.card {
+    background: white;
+    padding: 30px;
+    border-radius: 24px;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+}
+
+.section-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: var(--text);
     display: flex;
     align-items: center;
     gap: 10px;
 }
 
-.btn-upload:hover { 
-    background: #E0E7FF; 
-    transform: scale(1.05); 
+.section-subtitle {
+    color: var(--text-light);
+    margin-bottom: 25px;
+    font-size: 0.95rem;
+    line-height: 1.5;
 }
 
-/* File List Container */
-.container { 
-    margin: -40px 8% 40px; 
+/* Button Styles */
+.action-area {
+    display: flex;
+    justify-content: flex-start;
 }
 
-.file-card { 
-    background: white; 
-    padding: 20px 30px; 
-    border-radius: 20px; 
-    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); 
-    margin-bottom: 15px; 
-    display: flex; 
-    align-items: center; 
-    transition: 0.2s; 
-}
-
-.file-card:hover { 
-    transform: translateX(10px); 
-}
-
-.file-icon { 
-    width: 45px; 
-    height: 45px; 
-    background: #EFF6FF; 
-    color: var(--primary); 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    border-radius: 10px; 
-    font-size: 1.2rem; 
-    margin-right: 20px; 
-}
-
-/* MRI Specific Styling */
-.mri-icon {
-    background: #FFF7ED; 
-    color: #F59E0B;
-}
-
-.file-info { 
-    flex: 1; 
-}
-
-.file-name { 
-    font-weight: 700; 
-    font-size: 1rem; 
-}
-
-.file-date { 
-    font-size: 0.75rem; 
-    color: #94A3B8; 
-    margin-top: 2px; 
-}
-
-.tag-verified { 
-    background: #D1FAE5; 
-    color: #065F46; 
-    font-size: 0.7rem; 
-    font-weight: 800; 
-    padding: 4px 10px; 
-    border-radius: 6px; 
-    margin-right: 20px; 
+.btn-generate {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: white;
+    border: none;
+    padding: 14px 28px;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 6px rgba(59, 130, 246, 0.25);
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 10px;
 }
 
-.btn-summary { 
-    background: var(--primary); 
-    color: white; 
-    border: none; 
-    padding: 10px 18px; 
-    border-radius: 10px; 
-    font-weight: 600; 
-    cursor: pointer; 
-    font-size: 0.85rem; 
-    transition: 0.2s;
+.btn-generate:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(59, 130, 246, 0.35);
 }
 
-.btn-summary:hover {
-    background: #2563EB;
+.btn-generate:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    background: var(--text-light);
+    box-shadow: none;
 }
 
-/* Responsive Design */
+/* Summary Box Styles */
+.result-card {
+    animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.summary-box {
+    background: #F8FAFC;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.summary-header {
+    background: white;
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.badge-verified {
+    background: #D1FAE5;
+    color: #065F46;
+    font-size: 0.75rem;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 6px;
+    letter-spacing: 0.5px;
+}
+
+.summary-date {
+    font-size: 0.85rem;
+    color: var(--text-light);
+}
+
+.summary-content {
+    padding: 25px;
+    color: var(--text);
+    line-height: 1.6;
+    font-size: 1.05rem;
+}
+
+.summary-footer {
+    padding: 12px 20px;
+    background: #F1F5F9;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-light);
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.icon-lock {
+    color: var(--primary);
+}
+
+/* Responsive */
 @media (max-width: 768px) {
     header {
         padding: 15px 5%;
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+    
+    .header-actions {
+        justify-content: space-between;
     }
     
     .hero {
         padding: 40px 5% 60px;
-        flex-direction: column;
-        gap: 20px;
-        align-items: flex-start;
     }
     
-    .hero h1 {
-        font-size: 1.8rem;
+    .vault-container {
+        margin: 40px 5% 30px !important;
+        padding: 0;
     }
     
-    .container {
-        margin: -30px 5% 30px;
-    }
-    
-    .file-card {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 15px;
-    }
-    
-    .file-icon {
-        margin-right: 0;
-    }
-    
-    .tag-verified {
-        margin-right: 0;
-        align-self: flex-start;
+    .btn-generate {
+        width: 100%;
+        justify-content: center;
     }
 }

@@ -6,9 +6,12 @@ import {
   FaLink, 
   FaSignOutAlt
 } from 'react-icons/fa';
+import { useAuth } from '../../context/AuthContext'; // Import Auth Context
 import './ShareAccess.css';
 
 const ShareAccess = () => {
+  const { user, logout } = useAuth(); // Get user and logout function
+
   const [doctors, setDoctors] = useState([
     {
       id: 1,
@@ -32,6 +35,12 @@ const ShareAccess = () => {
       status: 'pending'
     }
   ]);
+
+  // Helper to format wallet address
+  const formatAddress = (address) => {
+    if (!address) return "No Wallet";
+    return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+  };
 
   const handleToggleAccess = (doctorId) => {
     setDoctors(prev => prev.map(doctor => 
@@ -71,9 +80,10 @@ const ShareAccess = () => {
         <div className="header-actions">
           <div className="wallet">
             <FaLink />
-            <span>0x71C...A4f</span>
+            {/* Display dynamic wallet address */}
+            <span>{formatAddress(user?.walletAddress)}</span>
           </div>
-          <button className="logout-btn">
+          <button className="logout-btn" onClick={logout}>
             <FaSignOutAlt />
             Logout
           </button>

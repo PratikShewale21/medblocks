@@ -23,29 +23,53 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const login = useCallback(async (email, password, userType) => {
-    // In a real app, you would make an API call here
-    // This is a mock implementation
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const mockUser = {
-          id: '123',
-          email,
-          name: email.split('@')[0],
-          role: userType,
-          avatar: `https://i.pravatar.cc/150?u=${email}`,
-        };
+  // const login = useCallback(async (email, password, userType) => {
+  //   // In a real app, you would make an API call here
+  //   // This is a mock implementation
+  //   return new Promise((resolve) => {
+  //     setTimeout(() => {
+  //       const mockUser = {
+  //         id: '123',
+  //         email,
+  //         name: email.split('@')[0],
+  //         role: userType,
+  //         avatar: `https://i.pravatar.cc/150?u=${email}`,
+  //       };
         
-        setUser(mockUser);
-        setIsAuthenticated(true);
-        localStorage.setItem('user', JSON.stringify(mockUser));
+  //       setUser(mockUser);
+  //       setIsAuthenticated(true);
+  //       localStorage.setItem('user', JSON.stringify(mockUser));
         
-        // Return the redirect path instead of navigating
-        const redirectPath = userType === 'doctor' ? '/doctor' : '/patient';
-        resolve({ user: mockUser, redirectPath });
-      }, 1000);
-    });
-  }, []);
+  //       // Return the redirect path instead of navigating
+  //       const redirectPath = userType === 'doctor' ? '/doctor' : '/patient';
+  //       resolve({ user: mockUser, redirectPath });
+  //     }, 1000);
+  //   });
+  // }, []);
+
+// medblocks-react/src/context/AuthContext.jsx
+
+const login = useCallback(async (email, password, userType, address) => { // Added address parameter
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const mockUser = {
+        id: '123',
+        email,
+        name: email.split('@')[0],
+        role: userType,
+        walletAddress: address, // Store the actual address here
+        avatar: `https://i.pravatar.cc/150?u=${email}`,
+      };
+      
+      setUser(mockUser);
+      setIsAuthenticated(true);
+      localStorage.setItem('user', JSON.stringify(mockUser));
+      
+      const redirectPath = userType === 'doctor' ? '/doctor' : '/patient';
+      resolve({ user: mockUser, redirectPath });
+    }, 1000);
+  });
+}, []);
 
   const logout = useCallback(() => {
     setUser(null);
