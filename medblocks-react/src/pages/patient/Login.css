@@ -1,0 +1,238 @@
+/* Login Container */
+.login-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.login-background {
+  width: 100%;
+  max-width: 450px;
+}
+
+/* Login Card */
+.login-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  padding: 40px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Login Header */
+.login-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.login-icon {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 36px;
+  margin: 0 auto 20px;
+  box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+}
+
+.login-header h1 {
+  font-size: 28px;
+  font-weight: 800;
+  color: #1f2937;
+  margin: 0 0 8px 0;
+}
+
+.login-header p {
+  color: #6b7280;
+  font-size: 16px;
+  margin: 0;
+}
+
+/* Login Form */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Error and Success Messages */
+.error-message, .success-message {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.error-message {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.success-message {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+
+/* Form Groups */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.form-group input {
+  padding: 12px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-group input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Login Button */
+.login-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 10px;
+}
+
+.login-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+}
+
+.login-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.login-button.loading {
+  background: #9ca3af;
+}
+
+/* Spinner */
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Demo Accounts Section */
+.demo-accounts {
+  margin-top: 30px;
+  padding-top: 30px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.demo-accounts h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #374151;
+  margin: 0 0 15px 0;
+  text-align: center;
+}
+
+.demo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.demo-account {
+  padding: 12px 16px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.demo-account strong {
+  color: #374151;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.demo-account small {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+  .login-container {
+    padding: 10px;
+  }
+  
+  .login-card {
+    padding: 30px 20px;
+  }
+  
+  .login-icon {
+    width: 60px;
+    height: 60px;
+    font-size: 28px;
+  }
+  
+  .login-header h1 {
+    font-size: 24px;
+  }
+  
+  .demo-account {
+    font-size: 12px;
+  }
+}

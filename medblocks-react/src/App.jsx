@@ -17,6 +17,7 @@ import AiScan from './pages/patient/AiScan';
 import SecureVault from './pages/patient/SecureVault';
 import PillTracker from './pages/patient/PillTracker';
 import ShareAccess from './pages/patient/ShareAccess';
+import ReportSummary from './pages/patient/ReportSummary';
 
 // Context
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -80,6 +81,7 @@ function App() {
             <Route path="secure-vault" element={<SecureVault />} />
             <Route path="pill-tracker" element={<PillTracker />} />
             <Route path="share-access" element={<ShareAccess />} />
+            <Route path="report-summary" element={<ReportSummary />} />
           </Route>
           
           {/* Default Routes */}

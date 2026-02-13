@@ -78,18 +78,17 @@ export default function AiScan() {
       }
 
       const data = await response.json();
-      console.log('Full response structure:', JSON.stringify(data, null, 2));
+      console.log('Response data:', data);
       
       if (data.success) {
         console.log('Extracted data:', data.extracted_data);
         console.log('Prediction result:', data.prediction);
-        console.log('Available keys in data.prediction:', Object.keys(data.prediction || {}));
         
         setExtractedData(data.extracted_data);
         setResult(data.prediction);
       } else {
         console.error('API returned success=false:', data);
-        setError('Failed to analyze medical report: ' + (data.message || 'Unknown error'));
+        setError('Failed to analyze the medical report: ' + (data.message || 'Unknown error'));
       }
     } catch (err) {
       console.error('Upload error:', err);
@@ -273,24 +272,24 @@ export default function AiScan() {
               )}
 
               {/* Summary Display */}
-              {result.diabetes_prediction.summary && (
+              {result.summary && (
                 <div className="summary-section">
                   <h4>
                     <FaUserMd />
                     Medical Summary
                   </h4>
                   <div className="summary-content">
-                    <p>{result.diabetes_prediction.summary}</p>
+                    <p>{result.summary}</p>
                   </div>
                 </div>
               )}
 
               {/* Warnings */}
-              {result.diabetes_prediction.warnings && result.diabetes_prediction.warnings.length > 0 && (
+              {result.warnings && result.warnings.length > 0 && (
                 <div className="warnings-section">
                   <h4>Warnings</h4>
                   <div className="warnings-list">
-                    {result.diabetes_prediction.warnings.map((warning, index) => (
+                    {result.warnings.map((warning, index) => (
                       <div key={index} className="warning-item">
                         <FaExclamationTriangle />
                         <span>{warning}</span>

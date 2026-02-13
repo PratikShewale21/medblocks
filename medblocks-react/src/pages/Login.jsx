@@ -93,14 +93,8 @@
 //         </div>
 //       </div>
 //     </div>
-//   );
-// };
-
-// export default Login;
-
-
 import React, { useState, useEffect } from 'react'; 
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { FaWallet, FaUserInjured, FaUserMd, FaShieldAlt, FaArrowRight } from 'react-icons/fa';
 import './Login.css';
@@ -123,37 +117,89 @@ const Login = () => {
     }
   }, []);
 
-  // Main Action: Handles both Connection and Navigation
+  // Main Action: Real MetaMask connection with fallback for testing
   const handleLoginAction = async () => {
-    if (!window.ethereum) {
-      alert("MetaMask not detected!");
-      return;
-    }
-
     try {
       setLoading(true);
+      console.log('Starting login process...');
+      console.log('window.ethereum available:', !!window.ethereum);
 
-      // 1. Get Address
-      const accounts = await window.ethereum.request({ 
-        method: "eth_requestAccounts" 
-      });
-      const address = accounts[0];
+      let address = "";
+      
+      // Check if MetaMask is installed
+      if (typeof window.ethereum !== 'undefined') {
+        console.log('MetaMask detected, attempting to connect...');
+        try {
+          // Request account access
+          const accounts = await window.ethereum.request({ 
+            method: "eth_requestAccounts" 
+          });
+          
+          console.log('Accounts received:', accounts);
+          
+          if (accounts.length > 0) {
+            address = accounts[0];
+            console.log('Using address:', address);
+          } else {
+            throw new Error('No accounts found');
+          }
+        } catch (metaMaskError) {
+          console.error('MetaMask connection error:', metaMaskError);
+          const useDemo = confirm('MetaMask connection failed: ' + metaMaskError.message + '\n\nUse demo mode for testing?');
+          
+          if (useDemo) {
+            address = "0x1234567890123456789012345678901234567890";
+            console.log('Using demo address:', address);
+          } else {
+            setLoading(false);
+            return;
+          }
+        }
+      } else {
+        console.log('MetaMask not detected');
+        // MetaMask not installed - offer demo mode
+        const useDemo = confirm(
+          'MetaMask not detected.\n\nTo install MetaMask:\n1. Go to metamask.io\n2. Download for your browser\n3. Refresh this page\n\nUse demo mode for now?'
+        );
+        
+        if (useDemo) {
+          address = "0x1234567890123456789012345678901234567890";
+          console.log('Using demo address:', address);
+        } else {
+          // Open MetaMask installation page
+          window.open('https://metamask.io/download/', '_blank');
+          setLoading(false);
+          return;
+        }
+      }
+      
+      if (!address) {
+        console.error('No wallet address obtained');
+        alert('Unable to get wallet address');
+        setLoading(false);
+        return;
+      }
+      
       setWalletAddress(address);
+      console.log('Connected wallet:', address);
 
-      // 2. Perform Login
-      const email = `demo-${userType}@example.com`;
-      const result = await login(email, 'password', userType, address);
-
-      // 3. Navigate (No form to interfere now)
+      // Authenticate through the AuthContext system
+      const email = `patient-${address.slice(-6)}@example.com`;
+      const result = await login(email, 'password', 'patient', address);
+      
+      console.log('Auth result:', result);
+      
       if (result && result.redirectPath) {
+        console.log('Navigating to:', result.redirectPath);
         navigate(result.redirectPath);
       } else {
-        // Hardcoded fallback in case redirectPath is missing
-        navigate(userType === 'doctor' ? '/doctor' : '/patient');
+        console.log('Using fallback navigation to /patient');
+        navigate('/patient');
       }
+      
     } catch (err) {
       console.error("Login failed:", err);
-      alert("Metamask connection failed.");
+      alert("Login failed: " + err.message);
     } finally {
       setLoading(false);
     }
@@ -216,6 +262,12 @@ const Login = () => {
         
         <div className="info-text">
           <p><FaShieldAlt /> Your data is secured with blockchain technology</p>
+          <div className="wallet-info">
+            <p><strong>🚀 Quick Start:</strong></p>
+            <p>• Click "Connect & Login" → Use demo mode if no MetaMask</p>
+            <p>• Or install MetaMask from <a href="https://metamask.io/download/" target="_blank" rel="noopener noreferrer" style={{ color: '#3B82F6' }}>metamask.io</a></p>
+            <p>• Then you can add and track your medications!</p>
+          </div>
         </div>
       </div>
     </div>

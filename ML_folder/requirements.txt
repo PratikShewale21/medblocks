@@ -1,7 +1,10 @@
 fastapi
 uvicorn
+pydantic
 numpy
 scikit-learn
 joblib
-pydantic
-
+python-multipart
+PyPDF2
+pdfplumber
+python-docx

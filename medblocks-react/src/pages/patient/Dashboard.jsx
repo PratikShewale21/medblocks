@@ -8,7 +8,8 @@ import {
   FaCheckCircle,
   FaShieldAlt,
   FaLink as FaLinkIcon,
-  FaSignOutAlt
+  FaSignOutAlt,
+  FaFileMedical
 } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
 import './Dashboard.css';
@@ -77,6 +78,13 @@ const Dashboard = () => {
             <FaUserShield style={{ color: '#8B5CF6' }} />
             <h3>Share Access</h3>
             <p>Manage smart contract permissions for your doctors.</p>
+          </div>
+        </Link>
+        <Link to="/patient/report-summary" className="card-link">
+          <div className="card">
+            <FaFileMedical style={{ color: '#6366F1' }} />
+            <h3>Report Summary</h3>
+            <p>View comprehensive AI-generated medical summaries and insights.</p>
           </div>
         </Link>
       </main>

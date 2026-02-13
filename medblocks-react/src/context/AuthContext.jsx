@@ -23,7 +23,7 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const login = useCallback(async (email, password, userType) => {
+  const login = useCallback(async (email, password, userType, walletAddress) => {
     // In a real app, you would make an API call here
     // This is a mock implementation
     return new Promise((resolve) => {
@@ -33,6 +33,7 @@ export const AuthProvider = ({ children }) => {
           email,
           name: email.split('@')[0],
           role: userType,
+          walletAddress,
           avatar: `https://i.pravatar.cc/150?u=${email}`,
         };
         
