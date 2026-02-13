@@ -277,8 +277,8 @@ const PillTracker = () => {
   const getButtonText = (medication) => {
     const status = getButtonStatus(medication);
     return status === 'taken' 
-      ? <><FaCheckCircle /> Already Taken</>
-      : <><FaPills /> Mark as Taken</>;
+        ? <><FaCheckCircle /> Already Taken</>
+        : <><FaPills /> Mark as Taken</>;
   };
 
   return (
@@ -307,13 +307,6 @@ const PillTracker = () => {
               </button>
             </div>
           )}
-          
-          <div className="header-stats">
-            <div className="stat-item">
-              <span className="stat-value">{adherenceData.adherence_rate_30_days}%</span>
-              <span className="stat-label">30-Day Adherence</span>
-            </div>
-          </div>
         </div>
       </div>
 

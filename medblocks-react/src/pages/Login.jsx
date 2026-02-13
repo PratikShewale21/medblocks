@@ -184,8 +184,8 @@ const Login = () => {
       console.log('Connected wallet:', address);
 
       // Authenticate through the AuthContext system
-      const email = `patient-${address.slice(-6)}@example.com`;
-      const result = await login(email, 'password', 'patient', address);
+      const email = `${userType}-${address.slice(-6)}@example.com`;
+      const result = await login(email, 'password', userType, address);
       
       console.log('Auth result:', result);
       
