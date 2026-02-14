@@ -54,7 +54,7 @@
 		"inputs": [
 			{
 				"internalType": "address",
-				"name": "_doctor",
+				"name": "doctor",
 				"type": "address"
 			}
 		],
@@ -67,12 +67,12 @@
 		"inputs": [
 			{
 				"internalType": "address",
-				"name": "_doctor",
+				"name": "doctor",
 				"type": "address"
 			},
 			{
 				"internalType": "uint256",
-				"name": "_durationSeconds",
+				"name": "durationSeconds",
 				"type": "uint256"
 			}
 		],
@@ -85,7 +85,45 @@
 		"inputs": [
 			{
 				"internalType": "address",
-				"name": "_doctor",
+				"name": "patient",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "doctor",
+				"type": "address"
+			},
+			{
+				"internalType": "bool",
+				"name": "permanent",
+				"type": "bool"
+			},
+			{
+				"internalType": "uint256",
+				"name": "expiryTime",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "nonce",
+				"type": "uint256"
+			},
+			{
+				"internalType": "bytes",
+				"name": "signature",
+				"type": "bytes"
+			}
+		],
+		"name": "grantWithSignature",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "doctor",
 				"type": "address"
 			}
 		],
@@ -98,12 +136,40 @@
 		"inputs": [
 			{
 				"internalType": "address",
-				"name": "_patient",
+				"name": "patient",
 				"type": "address"
 			},
 			{
 				"internalType": "address",
-				"name": "_doctor",
+				"name": "doctor",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "nonce",
+				"type": "uint256"
+			},
+			{
+				"internalType": "bytes",
+				"name": "signature",
+				"type": "bytes"
+			}
+		],
+		"name": "revokeWithSignature",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "patient",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "doctor",
 				"type": "address"
 			}
 		],
@@ -127,16 +193,35 @@
 		"inputs": [
 			{
 				"internalType": "address",
-				"name": "_patient",
+				"name": "patient",
 				"type": "address"
 			},
 			{
 				"internalType": "address",
-				"name": "_doctor",
+				"name": "doctor",
 				"type": "address"
 			}
 		],
 		"name": "hasAccess",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bytes32",
+				"name": "",
+				"type": "bytes32"
+			}
+		],
+		"name": "usedHashes",
 		"outputs": [
 			{
 				"internalType": "bool",
