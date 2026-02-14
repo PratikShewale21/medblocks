@@ -64,12 +64,87 @@ const PillTracker = () => {
         const meds = JSON.parse(storedMedications);
         setMedications(meds);
         
-        // Calculate adherence data from stored medications
-        const totalAdherence = meds.reduce((sum, med) => sum + med.adherence, 0) / meds.length;
+        // Calculate real adherence data from stored medications
+        const currentTime = new Date();
+        const sevenDaysAgo = new Date(currentTime.getTime() - 7 * 24 * 60 * 60 * 1000);
+        
+        // Calculate actual missed doses in last 7 days
+        let missedDoses7Days = 0;
+        let totalDelayMinutes = 0;
+        let takenCount = 0;
+        
+        meds.forEach(med => {
+          if (med.taken_times && med.taken_times.length > 0) {
+            med.taken_times.forEach(takenTime => {
+              if (takenTime.date) {
+                const takenDate = new Date(takenTime.timestamp);
+                if (takenDate >= sevenDaysAgo) {
+                  takenCount++;
+                  // Calculate delay from the specific time slot that was taken
+                  if (takenTime.timeSlot && takenTime.timeSlot !== 'Unscheduled') {
+                    const scheduledTimeStr = takenTime.timeSlot;
+                    const [hours, minutes] = scheduledTimeStr.match(/\d+:/g)?.[0].split(':') || [0, 0];
+                    const period = scheduledTimeStr.toLowerCase().includes('pm') && parseInt(hours) !== 12 ? 'PM' : 'AM';
+                    
+                    let scheduledHour = parseInt(hours);
+                    if (period === 'PM' && scheduledHour !== 12) scheduledHour += 12;
+                    if (period === 'AM' && scheduledHour === 12) scheduledHour = 0;
+                    
+                    const scheduledTime = new Date(takenDate);
+                    scheduledTime.setHours(scheduledHour, parseInt(minutes), 0, 0);
+                    
+                    if (takenDate > scheduledTime) {
+                      const delay = Math.floor((takenDate - scheduledTime) / (1000 * 60));
+                      totalDelayMinutes += delay;
+                      console.log(`🔍 Delay for ${takenTime.timeSlot}: ${delay} minutes`);
+                    }
+                  }
+                }
+              }
+            });
+          }
+          
+          // Check for missed scheduled doses in last 7 days
+          const timeSlots = med.time.split(',').map(t => t.trim());
+          for (let i = 0; i < 7; i++) {
+            const checkDate = new Date(sevenDaysAgo.getTime() + i * 24 * 60 * 60 * 1000);
+            const checkDateStr = checkDate.toDateString();
+            
+            // Check each time slot for this day
+            timeSlots.forEach(timeSlot => {
+              if (timeSlot && timeSlot !== 'Unscheduled') {
+                const [hours, minutes] = timeSlot.match(/\d+:/g)?.[0].split(':') || [0, 0];
+                const period = timeSlot.toLowerCase().includes('pm') && parseInt(hours) !== 12 ? 'PM' : 'AM';
+                
+                let scheduledHour = parseInt(hours);
+                if (period === 'PM' && scheduledHour !== 12) scheduledHour += 12;
+                if (period === 'AM' && scheduledHour === 12) scheduledHour = 0;
+                
+                const scheduledTime = new Date(checkDate);
+                scheduledTime.setHours(scheduledHour, parseInt(minutes), 0, 0);
+                
+                // Only count if scheduled time has passed
+                if (scheduledTime <= currentTime) {
+                  const wasTaken = med.taken_times && med.taken_times.some(takenTime => {
+                    return takenTime.date === checkDateStr && takenTime.timeSlot === timeSlot;
+                  });
+                  
+                  if (!wasTaken) {
+                    missedDoses7Days++;
+                    console.log(`🔍 Missed dose: ${med.name} - ${timeSlot} on ${checkDateStr}`);
+                  }
+                }
+              }
+            });
+          }
+        });
+        
+        const avgDelay = takenCount > 0 ? Math.floor(totalDelayMinutes / takenCount) : 0;
+        
         setAdherenceData({
-          missed_doses_last_7_days: Math.max(0, 5 - Math.floor(totalAdherence / 20)),
-          avg_delay_minutes: Math.max(0, 60 - Math.floor(totalAdherence / 2)),
-          adherence_rate_30_days: Math.floor(totalAdherence)
+          missed_doses_last_7_days: missedDoses7Days,
+          avg_delay_minutes: avgDelay,
+          adherence_rate_30_days: 0 // ML model will calculate this
         });
       } else {
         // First time patient - no medications yet
@@ -110,7 +185,7 @@ const PillTracker = () => {
       time: newMedication.time,
       nextDose: newMedication.time.split(',')[0] || newMedication.time,
       taken: false,
-      adherence: 85,
+      adherence: 0, // ML model will calculate this
       color: newMedication.color
     };
 
@@ -138,6 +213,133 @@ const PillTracker = () => {
   const handleLogout = () => {
     const redirectPath = logout();
     navigate(redirectPath);
+  };
+
+  const handleAnalyzeAdherence = async () => {
+    if (medications.length === 0) {
+      alert('Please add medications first to analyze adherence.');
+      return;
+    }
+
+    try {
+      // Test ML model with different inputs to prove it's working
+      console.log('🔍 Testing ML model with different inputs...');
+      try {
+        const testResponse = await fetch(`${API_BASE_URL}/test-ml`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+        const testResult = await testResponse.json();
+        console.log('🔍 ML Test Results:', testResult);
+        console.log('🔍 Poor adherence prediction:', testResult.poor_adherence_prediction);
+        console.log('🔍 Good adherence prediction:', testResult.good_adherence_prediction);
+        
+        if (testResult.poor_adherence_prediction.risk_percentage !== testResult.good_adherence_prediction.risk_percentage) {
+          console.log('✅ ML MODEL IS WORKING - Predictions are different for different inputs!');
+        } else {
+          console.log('❌ ML model might be returning same values');
+        }
+      } catch (testError) {
+        console.log('Test error:', testError);
+        // Continue with main analysis even if test fails
+      }
+
+      // Prepare data for ML model prediction
+      const predictionTime = new Date();
+      
+      // Calculate actual missed doses from today
+      const todayMissedDoses = medications.filter(med => {
+        const scheduledTime = new Date();
+        const [hours, minutes] = med.nextDose.split(':');
+        scheduledTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+        return predictionTime > scheduledTime && !med.taken;
+      }).length;
+      
+      // Calculate actual delay for last taken dose
+      const lastTakenMed = medications.find(med => med.last_taken);
+      let actualDelay = 0;
+      if (lastTakenMed) {
+        const scheduledTime = new Date();
+        const [hours, minutes] = lastTakenMed.nextDose.split(':');
+        scheduledTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+        actualDelay = Math.max(0, Math.floor((predictionTime - scheduledTime) / (1000 * 60)));
+      }
+      
+      // Prepare patient data for ML model
+      const patientData = {
+        patient_id: currentPatient.id,
+        wallet_address: currentPatient.wallet_address,
+        current_time: predictionTime.toISOString(),
+        medications: medications.map(med => ({
+          name: med.name,
+          dosage: med.dosage,
+          frequency: med.frequency,
+          scheduled_time: med.time,
+          taken_today: med.taken,
+          last_taken: med.last_taken,
+          taken_times: med.taken_times || []
+        })),
+        adherence_metrics: {
+          missed_doses_last_7_days: adherenceData.missed_doses_last_7_days,
+          avg_delay_minutes: adherenceData.avg_delay_minutes,
+          missed_doses_today: todayMissedDoses,
+          current_delay_minutes: actualDelay
+        },
+        temporal_features: {
+          hour_of_day: predictionTime.getHours(),
+          day_of_week: predictionTime.getDay(),
+          day_of_month: predictionTime.getDate(),
+          month: predictionTime.getMonth() + 1,
+          is_weekend: predictionTime.getDay() === 0 || predictionTime.getDay() === 6
+        }
+      };
+
+      try {
+        // Call ML backend API
+        const response = await fetch(`${API_BASE_URL}/predict/adherence`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(patientData)
+        });
+
+        if (!response.ok) {
+          throw new Error('ML model prediction failed');
+        }
+
+        const mlResult = await response.json();
+        
+        // Use ML model predictions
+        const result = {
+          will_miss_next_dose: mlResult.will_miss_next_dose,
+          risk_percentage: mlResult.risk_percentage,
+          risk_level: mlResult.risk_level,
+          recommendations: mlResult.recommendations,
+          adherence_score: mlResult.adherence_score,
+          next_risk_time: mlResult.next_risk_time,
+          model_confidence: mlResult.model_confidence,
+          ml_features: mlResult.ml_features || {
+            actual_missed_today: todayMissedDoses,
+            actual_delay_minutes: actualDelay,
+            model_predictions: true
+          }
+        };
+
+        console.log('ML Model Result:', mlResult);
+        console.log('Setting result:', result);
+        setResult(result);
+        alert('ML Analysis complete! Check below for personalized predictions.');
+
+      } catch (mlError) {
+        console.error('ML Model Error:', mlError);
+        alert('ML model is required for analysis. Please start the ML backend server.');
+      }
+    } catch (error) {
+      console.error('Error analyzing adherence:', error);
+      alert("Unable to analyze adherence");
+    }
   };
 
   const handleMarkAsTaken = async (medication) => {
@@ -192,7 +394,6 @@ const PillTracker = () => {
               return { 
                 ...med, 
                 taken_times: takenTimes,
-                adherence: Math.min(100, med.adherence + 2),
                 last_taken: currentTime
               };
             }
@@ -215,7 +416,6 @@ const PillTracker = () => {
               return { 
                 ...med, 
                 taken_times: takenTimes,
-                adherence: Math.min(100, med.adherence + 1), // Less adherence boost for unscheduled
                 last_taken: currentTime
               };
             }
@@ -228,24 +428,163 @@ const PillTracker = () => {
       
       saveMedications(updatedMedications);
 
-      // Show immediate feedback (no loading state needed)
-      const result = {
-        will_miss_next_dose: false,
-        risk_percentage: 15,
-        risk_level: 'LOW',
-        recommendations: [
-          'Continue taking medications on time',
-          'Keep track of your medication schedule',
-          'Use phone reminders for medication times'
-        ],
-        adherence_score: Math.floor(updatedMedications.reduce((sum, med) => sum + med.adherence, 0) / updatedMedications.length),
-        next_risk_time: 'Tomorrow, 9:00 AM',
-        model_confidence: 0.95,
-        ml_features: {}
+      // Prepare data for ML model prediction
+      const predictionTime = new Date();
+      const adherenceScore = Math.floor(updatedMedications.reduce((sum, med) => sum + med.adherence, 0) / updatedMedications.length);
+      
+      // Calculate actual missed doses from today
+      const todayMissedDoses = updatedMedications.filter(med => {
+        const scheduledTime = new Date();
+        const [hours, minutes] = med.nextDose.split(':');
+        scheduledTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+        return predictionTime > scheduledTime && !med.taken;
+      }).length;
+      
+      // Calculate actual delay for last taken dose (moved from handleMarkAsTaken)
+      let actualDelay = 0;
+      if (medications.length > 0) {
+        // Find the most recent taken dose across all medications
+        let mostRecentTakenOverall = null;
+        let mostRecentMed = null;
+        
+        medications.forEach(med => {
+          if (med.taken_times && med.taken_times.length > 0) {
+            const recentTaken = med.taken_times
+              .filter(taken => taken.date === new Date().toDateString())
+              .sort((a, b) => b.timestamp - a.timestamp)[0];
+            
+            if (recentTaken && (!mostRecentTakenOverall || recentTaken.timestamp > mostRecentTakenOverall.timestamp)) {
+              mostRecentTakenOverall = recentTaken;
+              mostRecentMed = med;
+            }
+          }
+        });
+        
+        if (mostRecentTakenOverall && mostRecentMed && mostRecentTakenOverall.timeSlot) {
+          // Parse the scheduled time for this specific time slot
+          const scheduledTimeStr = mostRecentTakenOverall.timeSlot;
+          const [hours, minutes] = scheduledTimeStr.match(/\d+:/g)?.[0].split(':') || [0, 0];
+          const period = scheduledTimeStr.toLowerCase().includes('pm') && parseInt(hours) !== 12 ? 'PM' : 'AM';
+          
+          let scheduledHour = parseInt(hours);
+          if (period === 'PM' && scheduledHour !== 12) scheduledHour += 12;
+          if (period === 'AM' && scheduledHour === 12) scheduledHour = 0;
+          
+          const scheduledTime = new Date();
+          scheduledTime.setHours(scheduledHour, parseInt(minutes), 0, 0);
+          
+          const takenTime = new Date(mostRecentTakenOverall.timestamp);
+          actualDelay = Math.max(0, Math.floor((takenTime - scheduledTime) / (1000 * 60)));
+          console.log(`🔍 Frontend delay calculation: scheduled=${scheduledTimeStr}, scheduled_time=${scheduledTime}, taken_time=${takenTime}, delay=${actualDelay} minutes`);
+        }
+      }
+      
+      // Prepare patient data for ML model
+      const patientData = {
+        patient_id: currentPatient.id,
+        wallet_address: currentPatient.wallet_address,
+        current_time: predictionTime.toISOString(),
+        medications: updatedMedications.map(med => ({
+          name: med.name,
+          dosage: med.dosage,
+          frequency: med.frequency,
+          scheduled_time: med.time,
+          adherence_score: med.adherence,
+          taken_today: med.taken,
+          last_taken: med.last_taken,
+          taken_times: med.taken_times || []
+        })),
+        adherence_metrics: {
+          adherence_score_30_days: adherenceScore,
+          missed_doses_last_7_days: adherenceData.missed_doses_last_7_days,
+          avg_delay_minutes: adherenceData.avg_delay_minutes,
+          missed_doses_today: todayMissedDoses,
+          current_delay_minutes: actualDelay
+        },
+        temporal_features: {
+          hour_of_day: predictionTime.getHours(),
+          day_of_week: predictionTime.getDay(),
+          day_of_month: predictionTime.getDate(),
+          month: predictionTime.getMonth() + 1,
+          is_weekend: predictionTime.getDay() === 0 || predictionTime.getDay() === 6
+        }
       };
-      console.log('Setting result:', result);
-      setResult(result);
-      alert('Analysis complete! Check below for results.');
+
+      try {
+        // Call ML backend API
+        const response = await fetch(`${API_BASE_URL}/predict/adherence`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(patientData)
+        });
+
+        if (!response.ok) {
+          throw new Error('ML model prediction failed');
+        }
+
+        const mlResult = await response.json();
+        
+        // Use ML model predictions
+        const result = {
+          will_miss_next_dose: mlResult.will_miss_next_dose || false,
+          risk_percentage: mlResult.risk_percentage || 15,
+          risk_level: mlResult.risk_level || 'LOW',
+          recommendations: mlResult.recommendations || [
+            'Continue taking medications on time',
+            'Keep track of your medication schedule',
+            'Use phone reminders for medication times'
+          ],
+          adherence_score: mlResult.adherence_score || adherenceScore,
+          next_risk_time: mlResult.next_risk_time || `Today, ${updatedMedications[0]?.nextDose || 'No scheduled doses'}`,
+          model_confidence: mlResult.model_confidence || 0.95,
+          missed_doses_last_7_days: mlResult.missed_doses_last_7_days || 0,
+          avg_delay_minutes: mlResult.avg_delay_minutes || 0,
+          ml_features: mlResult.ml_features || {
+            actual_missed_today: todayMissedDoses,
+            actual_delay_minutes: actualDelay,
+            adherence_trend: adherenceScore > 80 ? 'improving' : 'needs_attention',
+            model_predictions: true
+          }
+        };
+
+        console.log('ML Model Result:', mlResult);
+        console.log('Setting result:', mlResult);
+        console.log('Missed doses from result:', mlResult.missed_doses_last_7_days);
+        console.log('Avg delay from result:', mlResult.avg_delay_minutes);
+        setResult(result);
+        alert('ML Analysis complete! Check below for personalized predictions.');
+
+      } catch (mlError) {
+        console.error('ML Model Error:', mlError);
+        
+        // Fallback to simple calculation if ML fails
+        const fallbackResult = {
+          will_miss_next_dose: todayMissedDoses > 0 || adherenceScore < 70,
+          risk_percentage: Math.max(5, Math.min(95, 100 - adherenceScore + (todayMissedDoses * 10))),
+          risk_level: adherenceScore > 80 ? 'LOW' : adherenceScore > 60 ? 'MODERATE' : 'HIGH',
+          recommendations: [
+            'Continue taking medications on time',
+            'Keep track of your medication schedule',
+            'Use phone reminders for medication times'
+          ],
+          adherence_score: adherenceScore,
+          next_risk_time: `Today, ${updatedMedications[0]?.nextDose || 'No scheduled doses'}`,
+          model_confidence: 0.5,
+          ml_features: {
+            actual_missed_today: todayMissedDoses,
+            actual_delay_minutes: actualDelay,
+            adherence_trend: adherenceScore > 80 ? 'improving' : 'needs_attention',
+            model_predictions: false,
+            fallback_used: true
+          }
+        };
+
+        console.log('Using fallback result:', fallbackResult);
+        setResult(fallbackResult);
+        alert('ML model unavailable, using basic analysis. Check below for results.');
+      }
     } catch (error) {
       console.error('Error marking medication as taken:', error);
       alert("Unable to update medication status");
@@ -268,10 +607,38 @@ const PillTracker = () => {
 
   const getButtonStatus = (medication) => {
     const today = new Date().toDateString();
-    const takenToday = medication.taken_times?.some(
-      taken => taken.date === today
-    );
-    return takenToday ? 'taken' : 'available';
+    const currentHour = new Date().getHours();
+    
+    // Get all time slots for this medication
+    const timeSlots = medication.time.split(',').map(t => t.trim());
+    let currentTimeSlot = null;
+    
+    // Find current time slot
+    timeSlots.forEach(slot => {
+      const slotHour = parseInt(slot.match(/\d+/)?.[0] || '0');
+      const slotPeriod = slot.toLowerCase().includes('pm') && slotHour !== 12 ? slotHour + 12 : 
+                       slot.toLowerCase().includes('am') && slotHour === 12 ? 0 : slotHour;
+      
+      // Check if current time is within 2 hours of the scheduled time
+      if (Math.abs(currentHour - slotPeriod) <= 2) {
+        currentTimeSlot = slot;
+      }
+    });
+    
+    if (currentTimeSlot) {
+      // Check if this specific time slot has already been taken today
+      const alreadyTakenThisSlot = medication.taken_times?.some(
+        taken => taken.date === today && taken.timeSlot === currentTimeSlot
+      );
+      
+      return alreadyTakenThisSlot ? 'taken' : 'available';
+    } else {
+      // No current time slot, check if any dose was taken today
+      const takenToday = medication.taken_times?.some(
+        taken => taken.date === today
+      );
+      return takenToday ? 'taken' : 'available';
+    }
   };
 
   const getButtonText = (medication) => {
@@ -315,18 +682,18 @@ const PillTracker = () => {
           <div className="section-header">
             <h3>Today's Medications</h3>
             <div className="header-actions">
-              <div className="current-time">
-                🕐 {new Date().toLocaleTimeString('en-US', { 
-                  hour: 'numeric', 
-                  minute: '2-digit',
-                  hour12: true 
-                })}
-              </div>
               <button 
                 className="add-medication-btn"
                 onClick={() => setShowAddMedication(true)}
               >
                 <FaPlus /> Add Medication
+              </button>
+              <button 
+                className="analyze-btn"
+                onClick={handleAnalyzeAdherence}
+                disabled={medications.length === 0}
+              >
+                <FaChartLine /> Analyze Adherence
               </button>
             </div>
           </div>
@@ -474,19 +841,7 @@ const PillTracker = () => {
                     return null;
                   })()}
                   
-                  <div className="adherence-bar">
-                    <div className="adherence-label">Adherence: {med.adherence}%</div>
-                    <div className="progress-bar">
-                      <div 
-                        className="progress-fill" 
-                        style={{ 
-                          width: `${med.adherence}%`,
-                          backgroundColor: getAdherenceColor(med.adherence)
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
+                                  </div>
                 
                 <button 
                   className={`mark-taken-btn ${getButtonStatus(med)}`}
@@ -510,7 +865,7 @@ const PillTracker = () => {
           </div>
         )}
 
-        {console.log('Rendering result section, result:', result) || result && (
+        {result && (
           <div className="results-section">
             <div className="result-card">
               <div className="result-header">
@@ -560,7 +915,7 @@ const PillTracker = () => {
                     <FaCalendarAlt />
                   </div>
                   <div className="metric-content">
-                    <span className="metric-value">{adherenceData.missed_doses_last_7_days}</span>
+                    <span className="metric-value">{result?.missed_doses_last_7_days || 0}</span>
                     <span className="metric-label">Missed (7 days)</span>
                   </div>
                 </div>
@@ -569,7 +924,7 @@ const PillTracker = () => {
                     <FaClock />
                   </div>
                   <div className="metric-content">
-                    <span className="metric-value">{adherenceData.avg_delay_minutes}m</span>
+                    <span className="metric-value">{result?.avg_delay_minutes || 0}m</span>
                     <span className="metric-label">Avg Delay</span>
                   </div>
                 </div>
