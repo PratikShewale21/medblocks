@@ -11,7 +11,6 @@ import Login from './pages/Login';
 import Dashboard from './pages/doctor/Dashboard';
 import Patients from './pages/doctor/Patients';
 import AccessManager from './pages/doctor/AccessManager';
-import RiskAnalytics from './pages/doctor/RiskAnalyticsV2';
 import PatientDashboard from './pages/patient/Dashboard';
 import AiScan from './pages/patient/AiScan';
 import SecureVault from './pages/patient/SecureVault';
@@ -67,7 +66,6 @@ function App() {
             <Route index element={<Dashboard />} />
             <Route path="patients" element={<Patients />} />
             <Route path="access" element={<AccessManager />} />
-            <Route path="analytics" element={<RiskAnalytics />} />
           </Route>
           
           {/* Patient Route */}

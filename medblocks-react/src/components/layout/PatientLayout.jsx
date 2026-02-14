@@ -23,6 +23,9 @@ const PatientLayout = () => {
   };
 
   const isActive = (path) => {
+    if (path === '/patient') {
+      return location.pathname === '/patient';
+    }
     return location.pathname === path;
   };
 
@@ -39,7 +42,7 @@ const PatientLayout = () => {
         </div>
         
         <nav className="sidebar-nav">
-          <Link to="/patient/dashboard" className={`nav-item ${isActive('/patient/dashboard') ? 'active' : ''}`}>
+          <Link to="/patient" className={`nav-item ${isActive('/patient') ? 'active' : ''}`}>
             <FaHome />
             <span>Dashboard</span>
           </Link>

@@ -11,18 +11,18 @@ import './Dashboard.css';
 const Dashboard = () => {
   return (
     <>
-      <div className="header">
+      <div className="doctor-header">
         <div className="search-bar">
-          <FaSearch style={{ color: '#94A3B8' }} />
+          <FaSearch />
           <input type="text" placeholder="Search by Wallet Address (0x...) or Patient ID" />
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-          <span style={{ fontSize: '0.8rem', color: '#64748B' }}>
+        <div className="header-info">
+          <span className="chain-info">
             Chain: <strong>Sepolia Testnet</strong>
           </span>
           <img
             src="https://i.pravatar.cc/40?img=12"
-            style={{ borderRadius: '50%', border: '2px solid var(--accent)' }}
+            className="doctor-avatar"
             alt="Doctor Avatar"
           />
         </div>

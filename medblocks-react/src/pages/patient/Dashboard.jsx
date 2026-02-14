@@ -33,7 +33,7 @@ const Dashboard = () => {
 
       <main className="dashboard-content">
         <section className="section">
-          <h2 className="section-title">Quick Actions</h2>
+          <h2 className="section-title">Actions</h2>
           <div className="cards">
             <Link to="/patient/ai-scan" className="card">
               <div className="card-header">

@@ -30,6 +30,189 @@ header {
     border-bottom: 1px solid var(--border); 
 }
 
+/* --- Add Doctor Form --- */
+.add-doctor-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.form-input {
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    color: var(--text);
+    background: white;
+    transition: var(--transition);
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-input::placeholder {
+    color: var(--text-light);
+}
+
+.btn-add-doctor {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    align-self: flex-start;
+}
+
+.btn-add-doctor:hover {
+    background: #2563EB;
+    transform: translateY(-1px);
+}
+
+/* --- Access Tabs --- */
+.access-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0;
+}
+
+.access-tabs .tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    color: var(--text-light);
+    font-size: 14px;
+    font-weight: 500;
+    transition: var(--transition);
+    position: relative;
+    top: 1px;
+}
+
+.access-tabs .tab:hover {
+    color: var(--primary);
+    background: #f8fafc;
+}
+
+.access-tabs .tab.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+
+/* --- Enhanced Request Items --- */
+.req-content {
+    flex: 1;
+}
+
+.req-doctor {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+}
+
+.req-hospital {
+    font-size: 14px;
+    color: var(--text-light);
+    margin-bottom: 8px;
+}
+
+.req-meta {
+    font-size: 12px;
+    color: var(--text-light);
+    margin-bottom: 8px;
+}
+
+.req-meta span {
+    margin-right: 8px;
+}
+
+.req-access {
+    font-size: 13px;
+    color: var(--text);
+    background: #f1f5f9;
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+/* --- Empty State --- */
+.empty-requests {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-light);
+}
+
+.empty-requests i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.empty-requests h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0 0 8px 0;
+}
+
+.empty-requests p {
+    font-size: 14px;
+    margin: 0;
+}
+
+/* --- Responsive Design --- */
+@media (max-width: 768px) {
+    .add-doctor-form {
+        gap: 16px;
+    }
+    
+    .access-tabs {
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    
+    .req-item {
+        flex-direction: column;
+        gap: 16px;
+    }
+    
+    .req-buttons {
+        width: 100%;
+        display: flex;
+        gap: 8px;
+    }
+    
+    .req-buttons .btn-action {
+        flex: 1;
+    }
+}
+
 .logo { 
     font-size: 1.4rem; 
     font-weight: 800; 
