@@ -246,3 +246,25 @@ def gasless_revoke(data: dict):
     )
 
     return {"tx_hash": tx}
+
+# ===============================
+# COUNT ACTIVE DOCTORS
+# ===============================
+
+@router.get("/count")
+def count_access(patient: str):
+
+    validate_address(patient)
+
+    doctors = load_doctors()
+
+    count = 0
+
+    for d in doctors:
+        if check_access(patient, d["wallet"]):
+            count += 1
+
+    return {
+        "doctorCount": count
+    }
+
