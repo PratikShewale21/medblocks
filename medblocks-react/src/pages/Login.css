@@ -1,208 +1,337 @@
-/* Login Page Styles */
-:root {
-    --primary: #3B82F6;
-    --primary-dark: #2563EB;
-    --bg: #F8FAFC;
-    --text: #1E293B;
-    --text-light: #64748B;
-    --border: #E2E8F0;
-    --success: #10B981;
-}
-
+/* Two-Column Auth Layout Styles */
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Inter", sans-serif;
 }
 
-body {
-    background-color: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
+:root {
+  --primary: #3B82F6;
+  --primary-dark: #2563EB;
+  --primary-light: #60A5FA;
+  --success: #10B981;
+  --bg: #fff;
+  --text: #1E293B;
+  --text-light: #64748B;
+  --border: #ddd;
+  --border-light: #f1f5f9;
 }
 
-.login-container {
-    width: 100%;
-    max-width: 420px;
+.auth-container {
+  display: flex;
+  height: 100vh;
+  width: 100%;
 }
 
-.login-card {
-    background: white;
-    border-radius: 24px;
-    padding: 40px;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
-    text-align: center;
+/* LEFT SIDE IMAGE */
+.auth-left {
+  flex: 1;
+  background: url("/medical-bg.jpg") center/cover no-repeat;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
 }
 
-.logo {
-    font-size: 2rem;
-    font-weight: 800;
-    color: var(--primary);
-    margin-bottom: 24px;
-    display: inline-block;
+
+
+/* TEXT OVER IMAGE */
+.overlay {
+  position: absolute;
+  bottom: 40px;
+  left: 40px;
+  color: white;
+  z-index: 2;
+  max-width: 300px;
 }
 
-.logo span {
-    color: var(--success);
+.overlay h2 {
+  font-size: 22px;
+  margin-bottom: 10px;
+  font-weight: 700;
 }
 
-h2 {
-    font-size: 1.75rem;
-    margin-bottom: 8px;
-    color: var(--text);
+.overlay p {
+  font-size: 14px;
+  opacity: 0.9;
+  line-height: 1.5;
 }
 
-.subtitle {
-    color: var(--text-light);
-    margin-bottom: 32px;
-    font-size: 1rem;
+/* RIGHT LOGIN PANEL */
+.auth-right {
+  flex: 1;
+  background: radial-gradient(
+    circle at top,
+    #f0f7ff,
+    #ffffff
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* LOGIN CARD */
+.login-box {
+  width: 100%;
+  max-width: 360px;
+  background: #ffffff;
+  padding: 40px;
+  border-radius: 16px;
+  box-shadow: 
+    0 30px 60px rgba(0, 0, 0, 0.08),
+    0 10px 20px rgba(0, 0, 0, 0.05);
+}
+
+/* 1️⃣ Big Brand Header */
+.brand-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 10px;
+}
+
+.brand-header h1 {
+  font-size: 44px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  margin: 0;
+}
+
+.brand-header span.med {
+  color: #3b82f6;
+}
+
+.brand-header span.blocks {
+  color: #111827;
+}
+
+.brand-dot {
+  width: 10px;
+  height: 10px;
+  background: #3b82f6;
+  border-radius: 50%;
+  margin-left: 6px;
+}
+
+.brand-subtitle {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 30px;
+}
+
+.login-box h2 {
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+
+/* Form Styles */
+.login-box input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.2s ease;
+}
+
+.login-box input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .form-group {
-    margin-bottom: 24px;
-    text-align: left;
+  margin-bottom: 16px;
 }
 
-label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 500;
-    color: var(--text);
-    font-size: 0.9rem;
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
 }
 
 .input-group {
-    position: relative;
-    display: flex;
-    align-items: center;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
 }
 
 .input-group svg {
-    position: absolute;
-    left: 16px;
-    color: var(--text-light);
-    z-index: 1;
+  color: var(--text-light);
+  flex-shrink: 0;
 }
 
-input[type="text"] {
-    width: 100%;
-    padding: 14px 16px 14px 48px;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    font-size: 1rem;
-    transition: all 0.2s;
-    background: white;
+.input-group input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  color: var(--text);
+  background: transparent;
+  margin: 0;
+  padding: 0;
 }
 
-input[type="text"]:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+/* 4️⃣ Improve Wallet Input (Web3 Feel) */
+.wallet-input {
+  position: relative;
 }
 
-.user-type-selector {
-    display: flex;
-    gap: 12px;
-    margin-top: 8px;
+.wallet-badge {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #eef2ff;
+  color: #3b82f6;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.user-type-option {
+/* 4️⃣ Improve "Login As" Buttons */
+.role-selector {
+  display: flex;
+  gap: 8px;
+}
+
+.role-btn {
+  flex: 1;
+  padding: 14px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.role-btn.active {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+.forgot {
+  display: block;
+  text-align: right;
+  font-size: 13px;
+  margin-bottom: 20px;
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.forgot:hover {
+  text-decoration: underline;
+}
+
+/* 5️⃣ Strong Primary Action Button */
+.primary-btn {
+  width: 100%;
+  padding: 14px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 12px;
+  background: linear-gradient(
+    to right,
+    #3b82f6,
+    #2563eb
+  );
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.primary-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.primary-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 5️⃣ Add Micro-Trust Signal (Very Important) */
+.trust-text {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #6b7280;
+  text-align: center;
+}
+
+/* 6️⃣ Button Hover Micro-Animation */
+.primary-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  transition: 0.3s ease;
+}
+
+
+
+/* Mobile Responsive */
+@media (max-width: 900px) {
+  .auth-left {
+    display: none;
+  }
+
+  .auth-right {
     flex: 1;
-    padding: 16px;
-    border: 2px solid var(--border);
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.2s;
-    text-align: center;
-    background: white;
+  }
+  
+  .login-box {
+    max-width: 400px;
+  }
 }
 
-.user-type-option svg {
-    font-size: 1.5rem;
-    margin-bottom: 8px;
-    color: var(--text-light);
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-.user-type-option span {
-    font-size: 0.9rem;
-    font-weight: 500;
-    color: var(--text-light);
-}
-
-.user-type-option.selected {
-    border-color: var(--primary);
-    background-color: rgba(59, 130, 246, 0.05);
-}
-
-.user-type-option.selected svg,
-.user-type-option.selected span {
-    color: var(--primary);
-}
-
-.login-btn {
-    width: 100%;
-    padding: 16px;
-    background: var(--primary);
-    color: white;
-    border: none;
-    border-radius: 12px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    transition: background-color 0.2s;
-    margin-top: 8px;
-}
-
-.login-btn:hover:not(:disabled) {
-    background-color: var(--primary-dark);
-}
-
-.login-btn:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-}
-
-.login-btn svg {
-    transition: transform 0.2s;
-}
-
-.login-btn:hover:not(:disabled) svg {
-    transform: translateX(4px);
-}
-
-.info-text {
-    margin-top: 24px;
-    font-size: 0.85rem;
-    color: var(--text-light);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-}
-
-.info-text svg {
-    color: var(--success);
-}
-
-/* Responsive adjustments */
 @media (max-width: 480px) {
-    .login-card {
-        padding: 32px 24px;
-    }
-    
-    .user-type-selector {
-        flex-direction: column;
-    }
-}
+  .login-box {
+    padding: 30px 20px;
+  }
+  
+  .brand-header h1 {
+    font-size: 32px;
+    letter-spacing: 1px;
+  }
+  
+  .role-selector {
+    flex-direction: column;
+  }
+  
+  .wallet-badge {
+    font-size: 10px;
+    padding: 3px 8px;
+  }
+  
+  .trust-text {
+    font-size: 11px;
+  }
+  
+  .overlay h2 {
+    font-size: 18px;
+  }
+  
+  .overlay p {
+    font-size: 13px;
+  }
+  
+  }
