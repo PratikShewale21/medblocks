@@ -10,22 +10,23 @@ from config import (
     BACKEND_WALLET
 )
 
-
-# -------------------------------
-# Web3 Connection
-# -------------------------------
+# ===============================
+# WEB3 CONNECTION
+# ===============================
 
 w3 = Web3(Web3.HTTPProvider(RPC_URL))
 
 if not w3.is_connected():
-    raise RuntimeError("❌ Failed to connect to RPC")
+    raise RuntimeError("❌ RPC connection failed")
+
+BACKEND_WALLET = Web3.to_checksum_address(BACKEND_WALLET)
 
 print("✅ Connected to blockchain")
 
 
-# -------------------------------
-# Load ABIs
-# -------------------------------
+# ===============================
+# LOAD ABIS
+# ===============================
 
 with open("contracts/MedicalRecords.json") as f:
     medical_records_abi = json.load(f)["abi"]
@@ -34,9 +35,9 @@ with open("contracts/AccessControl.json") as f:
     access_control_abi = json.load(f)["abi"]
 
 
-# -------------------------------
-# Contract Instances
-# -------------------------------
+# ===============================
+# CONTRACTS
+# ===============================
 
 medical_records_contract = w3.eth.contract(
     address=Web3.to_checksum_address(MEDICAL_RECORDS_ADDRESS),
@@ -49,9 +50,9 @@ access_control_contract = w3.eth.contract(
 )
 
 
-# -------------------------------
-# Filename Mapping (Local Storage)
-# -------------------------------
+# ===============================
+# LOCAL FILE MAP
+# ===============================
 
 FILE_MAP = "file_map.json"
 
@@ -71,41 +72,40 @@ def save_file_map(data):
         json.dump(data, f, indent=2)
 
 
-def save_filename(cid: str, filename: str):
+def save_filename(cid, filename):
 
     data = load_file_map()
     data[cid] = filename
     save_file_map(data)
 
 
-def get_filename(cid: str):
+def get_filename(cid):
 
-    data = load_file_map()
-    return data.get(cid)
+    return load_file_map().get(cid)
 
 
-# -------------------------------
-# Read Functions
-# -------------------------------
+# ===============================
+# READ FUNCTIONS
+# ===============================
 
-def has_access(patient_address: str, doctor_address: str) -> bool:
+def check_access(patient, doctor):
 
-    if not Web3.is_address(patient_address) or not Web3.is_address(doctor_address):
-        raise ValueError("Invalid Ethereum address")
+    if not Web3.is_address(patient) or not Web3.is_address(doctor):
+        raise ValueError("Invalid address")
 
     return access_control_contract.functions.hasAccess(
-        Web3.to_checksum_address(patient_address),
-        Web3.to_checksum_address(doctor_address)
+        Web3.to_checksum_address(patient),
+        Web3.to_checksum_address(doctor)
     ).call()
 
 
-def get_all_records(patient_address: str):
+def get_all_records(patient):
 
-    if not Web3.is_address(patient_address):
-        raise ValueError("Invalid Ethereum address")
+    if not Web3.is_address(patient):
+        raise ValueError("Invalid address")
 
     records = medical_records_contract.functions.getAllRecords(
-        Web3.to_checksum_address(patient_address)
+        Web3.to_checksum_address(patient)
     ).call()
 
     result = []
@@ -119,132 +119,157 @@ def get_all_records(patient_address: str):
             "record_type": r[1],
             "timestamp": r[2],
             "added_by": r[3],
-            "filename": get_filename(cid),   # <-- added
+            "filename": get_filename(cid),
             "ipfs_url": f"https://gateway.pinata.cloud/ipfs/{cid}"
         })
 
     return result
 
 
-# -------------------------------
-# Write Functions
-# -------------------------------
+# ===============================
+# TRANSACTION HELPER
+# ===============================
 
-def grant_access(patient_address: str, doctor_address: str) -> str:
+def _send_tx(tx):
 
-    if not Web3.is_address(patient_address) or not Web3.is_address(doctor_address):
-        raise ValueError("Invalid Ethereum address")
+    signed = w3.eth.account.sign_transaction(
+        tx,
+        BACKEND_PRIVATE_KEY
+    )
 
-    nonce = w3.eth.get_transaction_count(BACKEND_WALLET, "pending")
+    tx_hash = w3.eth.send_raw_transaction(
+        signed.raw_transaction
+    )
 
-    tx = access_control_contract.functions.grantPermanentAccess(
-        Web3.to_checksum_address(doctor_address)
-    ).build_transaction({
+    return "0x" + tx_hash.hex()
+
+
+def _build_tx(function, gas=300000):
+
+    nonce = w3.eth.get_transaction_count(
+        BACKEND_WALLET,
+        "pending"
+    )
+
+    return function.build_transaction({
         "from": BACKEND_WALLET,
         "nonce": nonce,
-        "gas": 200000,
+        "gas": gas,
         "maxFeePerGas": w3.to_wei("30", "gwei"),
         "maxPriorityFeePerGas": w3.to_wei("2", "gwei"),
     })
 
-    signed_tx = w3.eth.account.sign_transaction(tx, BACKEND_PRIVATE_KEY)
 
-    tx_hash = w3.eth.send_raw_transaction(
-        signed_tx.raw_transaction
+# ===============================
+# NORMAL MODE (Backend signs)
+# ===============================
+
+def add_record(patient, cid, record_type, filename):
+
+    if not Web3.is_address(patient):
+        raise ValueError("Invalid patient")
+
+    tx = _build_tx(
+        medical_records_contract.functions.addRecord(
+            Web3.to_checksum_address(patient),
+            cid,
+            record_type
+        )
     )
 
-    return tx_hash.hex()
+    tx_hash = _send_tx(tx)
 
-
-def add_record(
-    patient_address: str,
-    cid: str,
-    record_type: str,
-    filename: str
-) -> str:
-
-    if not Web3.is_address(patient_address):
-        raise ValueError("Invalid Ethereum address")
-
-    nonce = w3.eth.get_transaction_count(BACKEND_WALLET, "pending")
-
-    tx = medical_records_contract.functions.addRecord(
-        Web3.to_checksum_address(patient_address),
-        cid,
-        record_type
-    ).build_transaction({
-        "from": BACKEND_WALLET,
-        "nonce": nonce,
-        "gas": 300000,
-        "maxFeePerGas": w3.to_wei("30", "gwei"),
-        "maxPriorityFeePerGas": w3.to_wei("2", "gwei"),
-    })
-
-    signed_tx = w3.eth.account.sign_transaction(tx, BACKEND_PRIVATE_KEY)
-
-    tx_hash = w3.eth.send_raw_transaction(
-        signed_tx.raw_transaction
-    )
-
-    # Save filename locally
     save_filename(cid, filename)
 
-    return tx_hash.hex()
+    return tx_hash
 
-def grant_temporary_access(
-    patient_address: str,
-    doctor_address: str,
-    duration_seconds: int
-) -> str:
 
-    if not Web3.is_address(patient_address) or not Web3.is_address(doctor_address):
-        raise ValueError("Invalid Ethereum address")
+def grant_access(patient, doctor):
 
-    nonce = w3.eth.get_transaction_count(BACKEND_WALLET, "pending")
-
-    tx = access_control_contract.functions.grantTemporaryAccess(
-        Web3.to_checksum_address(doctor_address),
-        duration_seconds
-    ).build_transaction({
-        "from": BACKEND_WALLET,
-        "nonce": nonce,
-        "gas": 200000,
-        "maxFeePerGas": w3.to_wei("30", "gwei"),
-        "maxPriorityFeePerGas": w3.to_wei("2", "gwei"),
-    })
-
-    signed_tx = w3.eth.account.sign_transaction(tx, BACKEND_PRIVATE_KEY)
-
-    tx_hash = w3.eth.send_raw_transaction(
-        signed_tx.raw_transaction
+    tx = _build_tx(
+        access_control_contract.functions.grantPermanentAccess(
+            Web3.to_checksum_address(doctor)
+        ),
+        gas=200000
     )
 
-    return tx_hash.hex()
+    return _send_tx(tx)
 
-def revoke_access(
-    patient_address: str,
-    doctor_address: str
-) -> str:
 
-    if not Web3.is_address(patient_address) or not Web3.is_address(doctor_address):
-        raise ValueError("Invalid Ethereum address")
+def grant_temporary_access(patient, doctor, duration):
 
-    nonce = w3.eth.get_transaction_count(BACKEND_WALLET, "pending")
-
-    tx = access_control_contract.functions.revokeAccess(
-        Web3.to_checksum_address(doctor_address)
-    ).build_transaction({
-        "from": BACKEND_WALLET,
-        "nonce": nonce,
-        "gas": 200000,
-        "maxFeePerGas": w3.to_wei("30", "gwei"),
-        "maxPriorityFeePerGas": w3.to_wei("2", "gwei"),
-    })
-
-    signed_tx = w3.eth.account.sign_transaction(tx, BACKEND_PRIVATE_KEY)
-
-    tx_hash = w3.eth.send_raw_transaction(
-        signed_tx.raw_transaction
+    tx = _build_tx(
+        access_control_contract.functions.grantTemporaryAccess(
+            Web3.to_checksum_address(doctor),
+            duration
+        ),
+        gas=200000
     )
 
-    return tx_hash.hex()
+    return _send_tx(tx)
+
+
+def revoke_access(patient, doctor):
+
+    tx = _build_tx(
+        access_control_contract.functions.revokeAccess(
+            Web3.to_checksum_address(doctor)
+        ),
+        gas=200000
+    )
+
+    return _send_tx(tx)
+
+
+# ===============================
+# GASLESS MODE (Signature)
+# ===============================
+
+def grant_with_signature(
+    patient,
+    doctor,
+    permanent,
+    expiry,
+    nonce,
+    signature
+):
+
+    tx = _build_tx(
+        access_control_contract.functions.grantWithSignature(
+            Web3.to_checksum_address(patient),
+            Web3.to_checksum_address(doctor),
+            permanent,
+            expiry,
+            nonce,
+            signature
+        )
+    )
+
+    return _send_tx(tx)
+
+
+def revoke_with_signature(
+    patient,
+    doctor,
+    nonce,
+    signature
+):
+
+    tx = _build_tx(
+        access_control_contract.functions.revokeWithSignature(
+            Web3.to_checksum_address(patient),
+            Web3.to_checksum_address(doctor),
+            nonce,
+            signature
+        )
+    )
+
+    return _send_tx(tx)
+
+
+# ===============================
+# BACKWARD COMPATIBILITY
+# ===============================
+
+def has_access(patient, doctor):
+    return check_access(patient, doctor)

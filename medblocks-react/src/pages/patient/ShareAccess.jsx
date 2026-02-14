@@ -1,43 +1,95 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { 
-  FaUserMd, 
-  FaClock, 
-  FaLink, 
+import React, { useState, useEffect } from "react";
+import { ethers } from "ethers";
+import axios from "axios";
+import { Link } from "react-router-dom";
+import {
+  FaUserMd,
+  FaClock,
+  FaLink,
   FaSignOutAlt,
   FaPlus,
-  FaBell
-} from 'react-icons/fa';
-import './ShareAccess.css';
+  FaBell,
+} from "react-icons/fa";
+import "./ShareAccess.css";
+
+const connectWallet = async () => {
+  if (!window.ethereum) {
+    alert("Install MetaMask");
+    return null;
+  }
+
+  await window.ethereum.request({
+    method: "eth_requestAccounts",
+  });
+
+  const provider = new ethers.BrowserProvider(window.ethereum);
+  return await provider.getSigner();
+};
 
 const ShareAccess = () => {
-  const [doctors, setDoctors] = useState([
-    {
-      id: 1,
-      name: 'Dr. Sarah Smith',
-      wallet: '0x9a2...e4f1',
-      active: true
-    },
-    {
-      id: 2,
-      name: 'Dr. James Wilson',
-      wallet: '0x3b1...c8d9',
-      active: false
+  const loadDoctors = async () => {
+    try {
+      const signer = await connectWallet();
+      if (!signer) return;
+
+      const patient = await signer.getAddress();
+
+      setPatientWallet(patient);
+
+      const res = await axios.get("http://localhost:8000/access/doctors");
+
+      const list = res.data;
+
+      const updated = [];
+
+      for (let d of list) {
+        const check = await axios.get("http://localhost:8000/access/check", {
+          params: {
+            patient,
+            doctor: d.wallet,
+          },
+        });
+
+        updated.push({
+          ...d,
+          active: check.data.hasAccess,
+        });
+      }
+
+      setDoctors(updated);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to load doctors");
     }
-  ]);
+  };
+
+  useEffect(() => {
+    loadDoctors();
+  }, []);
+
+  const [doctors, setDoctors] = useState([]);
+
+  const [patientWallet, setPatientWallet] = useState("");
 
   const [requests, setRequests] = useState([]);
 
+  const CONTRACT_ADDRESS = import.meta.env.VITE_ACCESS_CONTROL_ADDRESS;
+  console.log("Contract:", CONTRACT_ADDRESS);
+
   // Load requests from localStorage (from doctor side)
   React.useEffect(() => {
-    const storedRequests = JSON.parse(localStorage.getItem('patientAccessRequests') || '[]');
+    const storedRequests = JSON.parse(
+      localStorage.getItem("patientAccessRequests") || "[]",
+    );
     setRequests(storedRequests);
   }, []);
 
   // Periodically check for new requests
   React.useEffect(() => {
     const interval = setInterval(() => {
-      const storedRequests = JSON.parse(localStorage.getItem('patientAccessRequests') || '[]');
+      const storedRequests = JSON.parse(
+        localStorage.getItem("patientAccessRequests") || "[]",
+      );
       setRequests(storedRequests);
     }, 2000); // Check every 2 seconds
 
@@ -45,84 +97,199 @@ const ShareAccess = () => {
   }, []);
 
   const [newDoctor, setNewDoctor] = useState({
-    name: '',
-    wallet: ''
+    name: "",
+    wallet: "",
   });
 
-  const [activeTab, setActiveTab] = useState('shared');
+  const [activeTab, setActiveTab] = useState("shared");
 
-  const handleToggleAccess = (doctorId) => {
-    setDoctors(prev => prev.map(doctor => 
-      doctor.id === doctorId 
-        ? { ...doctor, active: !doctor.active }
-        : doctor
-    ));
-    
-    const doctor = doctors.find(d => d.id === doctorId);
-    const action = doctor.active ? 'revoked' : 'granted';
-    alert(`Access ${action} to ${doctor.name}`);
+  const handleToggleAccess = async (doctor) => {
+    try {
+      // Optimistic UI update (instant change)
+      setDoctors((prev) =>
+        prev.map((d) =>
+          d.wallet === doctor.wallet ? { ...d, active: !doctor.active } : d,
+        ),
+      );
+
+      if (doctor.active) {
+        await revokeAccess(doctor.wallet);
+      } else {
+        await grantAccess(doctor.wallet);
+      }
+
+      // Re-sync with blockchain (safety)
+      await loadDoctors();
+    } catch (err) {
+      console.error(err);
+
+      // Rollback if failed
+      await loadDoctors();
+
+      alert("Transaction failed");
+    }
   };
 
-  
   const handleDeclineRequest = (requestId) => {
-  setRequests(prev => prev.map(req => 
-    req.id === requestId 
-      ? { ...req, status: 'declined' }
-      : req
-  ));
-  
-  // Update localStorage to sync with doctor side
-  const updatedRequests = requests.map(req => 
-    req.id === requestId 
-      ? { ...req, status: 'declined' }
-      : req
-  );
-  localStorage.setItem('patientAccessRequests', JSON.stringify(updatedRequests));
-};
+    setRequests((prev) =>
+      prev.map((req) =>
+        req.id === requestId ? { ...req, status: "declined" } : req,
+      ),
+    );
 
-  const handleAddDoctor = () => {
-    if (newDoctor.name && newDoctor.wallet) {
-      const newId = Math.max(...doctors.map(d => d.id), 0) + 1;
-      setDoctors(prev => [...prev, {
-        id: newId,
+    // Update localStorage to sync with doctor side
+    const updatedRequests = requests.map((req) =>
+      req.id === requestId ? { ...req, status: "declined" } : req,
+    );
+    localStorage.setItem(
+      "patientAccessRequests",
+      JSON.stringify(updatedRequests),
+    );
+  };
+
+  const handleAddDoctor = async () => {
+    if (!newDoctor.name || !newDoctor.wallet) {
+      alert("Fill all fields");
+      return;
+    }
+
+    if (!ethers.isAddress(newDoctor.wallet)) {
+      alert("Invalid wallet");
+      return;
+    }
+
+    try {
+      await axios.post("http://localhost:8000/access/add-doctor", {
         name: newDoctor.name,
         wallet: newDoctor.wallet,
-        active: false
-      }]);
-      setNewDoctor({ name: '', wallet: '' });
-      alert(`Dr. ${newDoctor.name} added successfully!`);
-    } else {
-      alert('Please fill in both doctor name and wallet address');
+      });
+
+      setNewDoctor({ name: "", wallet: "" });
+
+      await loadDoctors();
+
+      alert("Doctor added!");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to add doctor");
     }
   };
 
   const handleApproveRequest = (requestId) => {
-    const request = requests.find(r => r.id === requestId);
+    const request = requests.find((r) => r.id === requestId);
     if (request) {
-      const newId = Math.max(...doctors.map(d => d.id), 0) + 1;
-      setDoctors(prev => [...prev, {
-        id: newId,
-        name: request.doctorName,
-        wallet: request.doctorWallet,
-        active: true
-      }]);
-      
+      const newId = Math.max(...doctors.map((d) => d.id), 0) + 1;
+      setDoctors((prev) => [
+        ...prev,
+        {
+          id: newId,
+          name: request.doctorName,
+          wallet: request.doctorWallet,
+          active: true,
+        },
+      ]);
+
       // Update request status
-      setRequests(prev => prev.map(req => 
-        req.id === requestId 
-          ? { ...req, status: 'approved' }
-          : req
-      ));
-      
-      // Update localStorage to sync with doctor side
-      const updatedRequests = requests.map(req => 
-        req.id === requestId 
-          ? { ...req, status: 'approved' }
-          : req
+      setRequests((prev) =>
+        prev.map((req) =>
+          req.id === requestId ? { ...req, status: "approved" } : req,
+        ),
       );
-      localStorage.setItem('patientAccessRequests', JSON.stringify(updatedRequests));
-      
+
+      // Update localStorage to sync with doctor side
+      const updatedRequests = requests.map((req) =>
+        req.id === requestId ? { ...req, status: "approved" } : req,
+      );
+      localStorage.setItem(
+        "patientAccessRequests",
+        JSON.stringify(updatedRequests),
+      );
+
       alert(`Access granted to ${request.doctorName}!`);
+    }
+  };
+
+  const grantAccess = async (doctorWallet) => {
+    try {
+      const signer = await connectWallet();
+      if (!signer) return;
+
+      const patient = await signer.getAddress();
+
+      const nonce = Date.now();
+
+      const hash = ethers.solidityPackedKeccak256(
+        ["address", "address", "bool", "uint256", "uint256", "address"],
+        [patient, doctorWallet, true, 0, nonce, CONTRACT_ADDRESS],
+      );
+
+      const signature = await signer.signMessage(ethers.getBytes(hash));
+
+      // Call backend
+      const res = await axios.post(
+        "http://localhost:8000/access/gasless-grant",
+        {
+          patient,
+          doctor: doctorWallet,
+          nonce,
+          signature,
+        },
+      );
+
+      const txHash = res.data.tx_hash;
+
+      // ⏳ WAIT for blockchain confirmation
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      await provider.waitForTransaction(txHash);
+
+      // ✅ Now reload after mined
+      await loadDoctors();
+    } catch (err) {
+      console.error(err);
+      alert("Grant failed");
+      await loadDoctors();
+    }
+  };
+
+  const revokeAccess = async (doctorWallet) => {
+    try {
+      const signer = await connectWallet();
+      if (!signer) return;
+
+      const patient = await signer.getAddress();
+
+      const nonce = Date.now();
+
+      const hash = ethers.solidityPackedKeccak256(
+        ["address", "address", "uint256", "address"],
+        [patient, doctorWallet, nonce, CONTRACT_ADDRESS],
+      );
+
+      const signature = await signer.signMessage(ethers.getBytes(hash));
+
+      // Call backend
+      const res = await axios.post(
+        "http://localhost:8000/access/gasless-revoke",
+        {
+          patient,
+          doctor: doctorWallet,
+          nonce,
+          signature,
+        },
+      );
+
+      const txHash = res.data.tx_hash;
+
+      // ⏳ WAIT for blockchain confirmation
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      await provider.waitForTransaction(txHash);
+
+      // ✅ Reload after mined
+      await loadDoctors();
+    } catch (err) {
+      console.error(err);
+      alert("Revoke failed");
+      await loadDoctors();
     }
   };
 
@@ -135,7 +302,11 @@ const ShareAccess = () => {
         <div className="header-actions">
           <div className="wallet">
             <FaLink />
-            <span>0x71C...A4f</span>
+            <span>
+              {patientWallet
+                ? patientWallet.slice(0, 6) + "..." + patientWallet.slice(-4)
+                : "Not Connected"}
+            </span>
           </div>
           <button className="logout-btn">
             <FaSignOutAlt />
@@ -146,7 +317,10 @@ const ShareAccess = () => {
 
       <section className="hero">
         <h1>Share Access</h1>
-        <p className="hero-subtitle">Manage who has permission to view your medical records and AI summaries.</p>
+        <p className="hero-subtitle">
+          Manage who has permission to view your medical records and AI
+          summaries.
+        </p>
       </section>
 
       <main className="container share-container">
@@ -163,7 +337,9 @@ const ShareAccess = () => {
                 type="text"
                 placeholder="Enter doctor's name"
                 value={newDoctor.name}
-                onChange={(e) => setNewDoctor({...newDoctor, name: e.target.value})}
+                onChange={(e) =>
+                  setNewDoctor({ ...newDoctor, name: e.target.value })
+                }
                 className="form-input"
               />
             </div>
@@ -173,7 +349,9 @@ const ShareAccess = () => {
                 type="text"
                 placeholder="0x..."
                 value={newDoctor.wallet}
-                onChange={(e) => setNewDoctor({...newDoctor, wallet: e.target.value})}
+                onChange={(e) =>
+                  setNewDoctor({ ...newDoctor, wallet: e.target.value })
+                }
                 className="form-input"
               />
             </div>
@@ -190,51 +368,55 @@ const ShareAccess = () => {
             <FaUserMd />
             Manage Access
           </div>
-          
+
           <div className="access-tabs">
-            <div 
-              className={`tab ${activeTab === 'shared' ? 'active' : ''}`}
-              onClick={() => setActiveTab('shared')}
+            <div
+              className={`tab ${activeTab === "shared" ? "active" : ""}`}
+              onClick={() => setActiveTab("shared")}
             >
-              Shared ({doctors.filter(d => d.active).length})
+              Shared ({doctors.filter((d) => d.active).length})
             </div>
-            <div 
-              className={`tab ${activeTab === 'revoked' ? 'active' : ''}`}
-              onClick={() => setActiveTab('revoked')}
+            <div
+              className={`tab ${activeTab === "revoked" ? "active" : ""}`}
+              onClick={() => setActiveTab("revoked")}
             >
-              Revoked ({doctors.filter(d => !d.active).length})
+              Revoked ({doctors.filter((d) => !d.active).length})
             </div>
           </div>
-          
+
           <div className="doctors-list">
             {doctors
-              .filter(doctor => activeTab === 'shared' ? doctor.active : !doctor.active)
+              .filter((doctor) =>
+                activeTab === "shared" ? doctor.active : !doctor.active,
+              )
               .map((doctor) => (
-              <div key={doctor.id} className="dr-item">
-                <div className="dr-info">
-                  <div className="dr-avatar">
-                    <FaUserMd />
+                <div key={doctor.id} className="dr-item">
+                  <div className="dr-info">
+                    <div className="dr-avatar">
+                      <FaUserMd />
+                    </div>
+                    <div>
+                      <div className="dr-name">{doctor.name}</div>
+                      <div className="dr-wallet">{doctor.wallet}</div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="dr-name">{doctor.name}</div>
-                    <div className="dr-wallet">{doctor.wallet}</div>
+                  <div className="dr-actions">
+                    <span
+                      className={`status-label ${doctor.active ? "status-active" : "status-revoked"}`}
+                    >
+                      {doctor.active ? "ACTIVE" : "REVOKED"}
+                    </span>
+                    <label className="switch">
+                      <input
+                        type="checkbox"
+                        checked={doctor.active}
+                        onChange={() => handleToggleAccess(doctor)}
+                      />
+                      <span className="slider"></span>
+                    </label>
                   </div>
                 </div>
-                <div className="dr-actions">
-                  <span className={`status-label ${doctor.active ? 'status-active' : 'status-revoked'}`}>
-                    {doctor.active ? 'ACTIVE' : 'REVOKED'}
-                  </span>
-                  <label className="switch">
-                    <input 
-                      type="checkbox" 
-                      checked={doctor.active}
-                      onChange={() => handleToggleAccess(doctor.id)}
-                    />
-                    <span className="slider"></span>
-                  </label>
-                </div>
-              </div>
-            ))}
+              ))}
           </div>
         </div>
 
@@ -244,8 +426,10 @@ const ShareAccess = () => {
             <FaBell />
             Doctor Requests
           </div>
-          <p className="section-subtitle">Doctors requesting access to your medical records</p>
-          
+          <p className="section-subtitle">
+            Doctors requesting access to your medical records
+          </p>
+
           {requests.map((request) => (
             <div key={request.id} className="req-item">
               <div className="req-content">
@@ -256,25 +440,27 @@ const ShareAccess = () => {
                   <span>•</span>
                   <span>{request.timestamp}</span>
                 </div>
-                <div className="req-access">Requested: {request.requestedAccess}</div>
+                <div className="req-access">
+                  Requested: {request.requestedAccess}
+                </div>
               </div>
               <div className="req-buttons">
-                {request.status === 'pending' ? (
+                {request.status === "pending" ? (
                   <>
-                    <button 
+                    <button
                       className="btn-action btn-approve"
                       onClick={() => handleApproveRequest(request.id)}
                     >
                       Approve
                     </button>
-                    <button 
+                    <button
                       className="btn-action btn-decline"
                       onClick={() => handleDeclineRequest(request.id)}
                     >
                       Decline
                     </button>
                   </>
-                ) : request.status === 'declined' ? (
+                ) : request.status === "declined" ? (
                   <button className="btn-action btn-decline" disabled>
                     Declined
                   </button>
@@ -286,7 +472,7 @@ const ShareAccess = () => {
               </div>
             </div>
           ))}
-          
+
           {requests.length === 0 && (
             <div className="empty-requests">
               <FaBell />
