@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FaWallet, FaUserInjured, FaUserMd, FaShieldAlt, FaArrowRight } from 'react-icons/fa';
+import { FaWallet, FaUserInjured, FaUserMd } from 'react-icons/fa';
 import './Login.css';
 
 const Login = () => {
@@ -22,7 +22,7 @@ const Login = () => {
     }
   }, []);
 
-  const handleLoginAction = async () => {
+  const handleWalletLogin = async () => {
     try {
       setLoading(true);
       
@@ -71,8 +71,8 @@ const Login = () => {
       
       setWalletAddress(address);
 
-      const email = `${userType}-${address.slice(-6)}@example.com`;
-      const result = await login(email, 'password', userType, address);
+      const userEmail = `${userType}-${address.slice(-6)}@example.com`;
+      const result = await login(userEmail, 'password', userType, address);
       
       if (result && result.redirectPath) {
         navigate(result.redirectPath);
@@ -88,61 +88,84 @@ const Login = () => {
     }
   };
 
+  
   return (
-    <div className="login-container">
-      <div className="login-card">
-        <div className="logo">Med<span>Blocks</span></div>
-        <h2>Welcome Back</h2>
-        <p className="subtitle">Sign in to access your medical records</p>
-        
-        <div className="login-form-wrapper">
-          <div className="form-group">
-            <label htmlFor="wallet">Wallet Address</label>
-            <div className="input-group">
-              <FaWallet />
-              <input 
-                type="text" 
-                id="wallet"
-                placeholder="0x..." 
-                value={walletAddress}
-                readOnly 
-              />
-            </div>
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="userType">Login As</label>
-            <div className="user-type-selector">
-              <div 
-                className={`user-type-option ${userType === 'patient' ? 'selected' : ''}`}
-                onClick={() => setUserType('patient')}
-              >
-                <FaUserInjured />
-                <span>Patient</span>
-              </div>
-              <div 
-                className={`user-type-option ${userType === 'doctor' ? 'selected' : ''}`}
-                onClick={() => setUserType('doctor')}
-              >
-                <FaUserMd />
-                <span>Doctor</span>
-              </div>
-            </div>
-          </div>
-          
-          <button 
-            type="button" 
-            className="login-btn" 
-            onClick={handleLoginAction} 
-            disabled={loading}
-          >
-            <span>{loading ? 'Processing...' : 'Connect & Login'}</span>
-            <FaArrowRight />
-          </button>
+    <div className="auth-container">
+      {/* LEFT IMAGE SECTION */}
+      <div className="auth-left">
+        <div className="overlay">
+          <h2>Empowering Healthcare, One Click at a Time</h2>
+          <p>Your Health. Your Records. Your Control.</p>
         </div>
-        
-        <div className="info-text">
-          <p><FaShieldAlt /> Your data is secured with blockchain technology</p>
+      </div>
+
+      {/* RIGHT LOGIN SECTION */}
+      <div className="auth-right">
+        <div className="login-box">
+          <div className="brand-header">
+            <h1>
+              <span className="med">MED</span>
+              <span className="blocks">BLOCKS</span>
+            </h1>
+            <div className="brand-dot"></div>
+          </div>
+          <p className="brand-subtitle">
+            Secure medical records powered by blockchain
+          </p>
+
+          {/* Wallet Login Form */}
+          <div className="wallet-login">
+            <div className="form-group">
+              <label htmlFor="wallet">Wallet Address</label>
+              <div className="wallet-input">
+                <div className="input-group">
+                  <FaWallet />
+                  <input 
+                    type="text" 
+                    id="wallet"
+                    placeholder="Connect your wallet..." 
+                    value={walletAddress}
+                    readOnly 
+                  />
+                </div>
+                <div className="wallet-badge">
+                  MetaMask
+                </div>
+              </div>
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="userType">Login As</label>
+              <div className="role-selector">
+                <div 
+                  className={`role-btn ${userType === 'patient' ? 'active' : ''}`}
+                  onClick={() => setUserType('patient')}
+                >
+                  <FaUserInjured />
+                  <span>Patient</span>
+                </div>
+                <div 
+                  className={`role-btn ${userType === 'doctor' ? 'active' : ''}`}
+                  onClick={() => setUserType('doctor')}
+                >
+                  <FaUserMd />
+                  <span>Doctor</span>
+                </div>
+              </div>
+            </div>
+            
+            <button 
+              className="primary-btn" 
+              onClick={handleWalletLogin} 
+              disabled={loading}
+            >
+              {loading ? 'Connecting...' : 'Connect Wallet'}
+            </button>
+          </div>
+
+          <p className="trust-text">
+            🔒 Your data never leaves your wallet
+          </p>
         </div>
       </div>
     </div>

@@ -11,6 +11,7 @@ const SecureVault = () => {
   const [dragActive, setDragActive] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [recordType, setRecordType] = useState('Prescription');
+  const [doctorWallet, setDoctorWallet] = useState('');
   const [notes, setNotes] = useState('');
   const [accessStatus, setAccessStatus] = useState(null);
   const [showSecurityInfo, setShowSecurityInfo] = useState(false);
@@ -118,6 +119,16 @@ const SecureVault = () => {
 
   const handleUpload = async () => {
     if (!selectedFile) return;
+    
+    if (!doctorWallet || doctorWallet.trim() === '') {
+      alert('Please enter the doctor\'s wallet address');
+      return;
+    }
+    
+    if (!doctorWallet.startsWith('0x') || doctorWallet.length < 10) {
+      alert('Please enter a valid wallet address (starting with 0x)');
+      return;
+    }
 
     setLoading(true);
     setUploadProgress(0);
@@ -143,6 +154,8 @@ const SecureVault = () => {
         fileType: selectedFile.type,
         fileSize: `${(selectedFile.size / 1024 / 1024).toFixed(1)} MB`,
         recordType: recordType,
+        doctorWallet: doctorWallet,
+        notes: notes || 'No notes provided',
         uploadDate: new Date().toISOString().split('T')[0],
         addedBy: user?.name || 'Patient',
         verified: false,
@@ -163,7 +176,9 @@ const SecureVault = () => {
       });
 
       setSelectedFile(null);
+      setUploadProgress(0);
       setNotes('');
+      setDoctorWallet('');
       setRecordType('Prescription');
     } catch (error) {
       console.error('Upload failed:', error);
@@ -630,6 +645,21 @@ Transaction Hash: ${record.transactionHash}`;
                     <option value="Insurance">Insurance</option>
                     <option value="Other">Other</option>
                   </select>
+                </div>
+                
+                <div className="form-group">
+                  <label>Doctor's Wallet Address *</label>
+                  <div className="input-group">
+                    <FaUsers />
+                    <input
+                      type="text"
+                      value={doctorWallet}
+                      onChange={(e) => setDoctorWallet(e.target.value)}
+                      placeholder="0x... (Doctor's wallet address)"
+                      className="form-input"
+                      required
+                    />
+                  </div>
                 </div>
                 
                 <div className="form-group">
