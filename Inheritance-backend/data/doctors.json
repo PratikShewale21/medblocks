@@ -13,5 +13,20 @@
     "id": 3,
     "name": "Dr. Nitin",
     "wallet": "0x590d9F2103Ef765925F14289a0c1A942baF1f125"
+  },
+  {
+    "id": 4,
+    "name": "Dr. Vedant Patil",
+    "wallet": "0xD306Eb1a56fE2F841f10746e9CCa18dB98d1785B"
+  },
+  {
+    "id": 5,
+    "name": "Dr. Anuj Patil",
+    "wallet": "0x8D7A26d8122F5Eb66a27B9a65fEF25556413C575"
+  },
+  {
+    "id": 6,
+    "name": "Dr. Chirag Rathi",
+    "wallet": "0xf5EBa06Fc668976bfe8c4100A5a38D897EC00bc4"
   }
 ]
