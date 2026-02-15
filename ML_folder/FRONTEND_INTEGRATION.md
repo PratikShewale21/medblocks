@@ -1,4 +1,4 @@
-# Frontend Integration Guide
+# Frontend Integration Guide - Universal Document Analysis
 
 ## 🌐 API Base URL
 ```
@@ -8,10 +8,10 @@ Production: https://your-api-domain.com
 
 ## 📋 Available Endpoints
 
-### 📤 PDF Upload & Processing
+### 🤖 Universal Document Analysis
 ```javascript
-// Upload medical report for comprehensive analysis
-POST /upload/medical-report
+// Upload ANY document for comprehensive ML analysis
+POST /upload/summarize-pdf
 Content-Type: multipart/form-data
 
 // Request Body:
@@ -22,27 +22,22 @@ FormData: {
 // Response:
 {
   "success": true,
-  "extracted_data": {
-    "glucose": 182.0,
-    "bmi": 33.1,
-    "age": 56.0,
-    // ... other extracted values
-  },
+  "extracted_data": {"text_length": 1500},
   "prediction": {
-    "diabetes": {
-      "prediction": 1,
-      "risk_percentage": 49.22,
-      "risk_level": "MODERATE"
-    },
-    "adherence": {
-      "will_miss_next_dose": false,
-      "risk_percentage": 25.3,
-      "risk_level": "LOW"
+    "summary": {
+      "executive_summary": "34-year-old male diagnosed with soft tissue injury...",
+      "key_findings": "34-year-old male diagnosed with soft tissue injury...",
+      "risk_assessment": "Document type: medical",
+      "recommendations": "Follow prescribed treatment plan\nAttend follow-up appointments",
+      "follow_up": "Consult relevant professional if needed",
+      "patient_summary": "34-year-old male diagnosed with soft tissue injury...",
+      "clinical_insights": {"people": ["34-year-old male"], "conditions": ["soft tissue injury"]},
+      "extracted_data": {"people": ["34-year-old male"], "conditions": ["soft tissue injury"]},
+      "report_type": "medical",
+      "ml_model_used": "Simple ML Summarizer",
+      "confidence_scores": {"content_confidence": 0.9}
     }
-  },
-  "confidence": 0.75,
-  "warnings": ["Missing fields: pregnancies, dpf"],
-  "message": "Comprehensive analysis completed"
+  }
 }
 ```
 

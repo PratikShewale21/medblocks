@@ -8,6 +8,7 @@ import os
 from predictors.diabetes_predictor import predict_diabetes
 from predictors.enhanced_summary import generate_enhanced_summary
 from predictors.ai_summary import generate_ai_summary
+from predictors.simple_ml_summarizer import analyze_with_simple_ml
 from extractors.pdf_extractor import PDFExtractor
 from extractors.medical_parser import MedicalDataParser
 from services.alert_service import alert_service, Alert
@@ -184,20 +185,23 @@ async def upload_and_summarize_pdf(file: UploadFile = File(...)):
         if not text.strip():
             raise HTTPException(status_code=400, detail="Could not extract text from PDF")
         
-        # Generate AI-powered medical summary
+        # Generate content-based ML summary
         try:
-            ai_result = generate_ai_summary(text)
+            ml_result = analyze_with_simple_ml(text)
             
-            # Convert AI result to expected format
+            # Format ML results for frontend
             summary = {
-                "executive_summary": ai_result.get("patient_summary", "AI analysis completed"),
-                "key_findings": format_key_findings(ai_result.get("parameter_analysis", {})),
-                "risk_assessment": format_risk_assessment(ai_result.get("risk_assessment", {})),
-                "recommendations": format_recommendations(ai_result.get("action_plan", {})),
-                "follow_up": ai_result.get("risk_assessment", {}).get("urgency", "Routine monitoring"),
-                "patient_summary": ai_result.get("patient_summary", "AI analysis completed"),
-                "clinical_insights": ai_result.get("clinical_insights", []),
-                "extracted_data": ai_result.get("extracted_data", {})
+                "executive_summary": ml_result.get("universal_summary", "ML analysis completed"),
+                "key_findings": ml_result.get("universal_summary", "Analysis completed"),
+                "risk_assessment": f"Document type: {ml_result.get('document_type', 'unknown')}",
+                "recommendations": "\n".join(ml_result.get("recommendations", ["Document processed successfully"])),
+                "follow_up": "Consult relevant professional if needed",
+                "patient_summary": ml_result.get("universal_summary", "ML analysis completed"),
+                "clinical_insights": ml_result.get("extracted_entities", {}),
+                "extracted_data": ml_result.get("extracted_entities", {}),
+                "report_type": ml_result.get("document_type", "unknown"),
+                "ml_model_used": "True ML Transformer Analyzer",
+                "confidence_scores": ml_result.get("confidence_scores", {})
             }
         except Exception as e:
             print(f"ERROR in AI summary generation: {e}")
@@ -809,6 +813,25 @@ def format_recommendations(action_plan):
             recommendations.append(f"• {mgmt}")
     
     return "\n".join(recommendations)
+
+def format_ml_risk_assessment(risk_assessment):
+    """Format ML-based risk assessment"""
+    if not risk_assessment:
+        return "Unable to assess risk"
+    
+    risk_level = risk_assessment.get('overall_risk', 'unknown')
+    urgency = risk_assessment.get('urgency', 'Routine monitoring')
+    risk_factors = risk_assessment.get('risk_factors', [])
+    
+    assessment = f"Overall Risk: {risk_level.title()}\n"
+    assessment += f"Urgency: {urgency}\n"
+    
+    if risk_factors:
+        assessment += "Risk Factors:\n"
+        for factor in risk_factors:
+            assessment += f"• {factor}\n"
+    
+    return assessment
 
 # =======================
 # FEATURE 5: Direct Adherence Prediction
