@@ -9,6 +9,7 @@ import {
   FaSignOutAlt,
   FaPlus,
   FaBell,
+  FaSpinner // <--- ADDED: Spinner icon
 } from "react-icons/fa";
 import "./ShareAccess.css";
 
@@ -68,10 +69,11 @@ const ShareAccess = () => {
   }, []);
 
   const [doctors, setDoctors] = useState([]);
-
   const [patientWallet, setPatientWallet] = useState("");
-
   const [requests, setRequests] = useState([]);
+  
+  // <--- ADDED: Track which wallet is currently processing a blockchain transaction --->
+  const [processingWallets, setProcessingWallets] = useState({});
 
   const CONTRACT_ADDRESS = import.meta.env.VITE_ACCESS_CONTROL_ADDRESS;
   console.log("Contract:", CONTRACT_ADDRESS);
@@ -210,12 +212,14 @@ const ShareAccess = () => {
   };
 
   const grantAccess = async (doctorWallet) => {
+    // <--- ADDED: Start loading state for this wallet --->
+    setProcessingWallets((prev) => ({ ...prev, [doctorWallet]: true }));
+
     try {
       const signer = await connectWallet();
       if (!signer) return;
 
       const patient = await signer.getAddress();
-
       const nonce = Date.now();
 
       const hash = ethers.solidityPackedKeccak256(
@@ -248,16 +252,21 @@ const ShareAccess = () => {
       console.error(err);
       alert("Grant failed");
       await loadDoctors();
+    } finally {
+      // <--- ADDED: Stop loading state regardless of success or failure --->
+      setProcessingWallets((prev) => ({ ...prev, [doctorWallet]: false }));
     }
   };
 
   const revokeAccess = async (doctorWallet) => {
+    // <--- ADDED: Start loading state for this wallet --->
+    setProcessingWallets((prev) => ({ ...prev, [doctorWallet]: true }));
+
     try {
       const signer = await connectWallet();
       if (!signer) return;
 
       const patient = await signer.getAddress();
-
       const nonce = Date.now();
 
       const hash = ethers.solidityPackedKeccak256(
@@ -290,6 +299,9 @@ const ShareAccess = () => {
       console.error(err);
       alert("Revoke failed");
       await loadDoctors();
+    } finally {
+      // <--- ADDED: Stop loading state regardless of success or failure --->
+      setProcessingWallets((prev) => ({ ...prev, [doctorWallet]: false }));
     }
   };
 
@@ -389,34 +401,49 @@ const ShareAccess = () => {
               .filter((doctor) =>
                 activeTab === "shared" ? doctor.active : !doctor.active,
               )
-              .map((doctor) => (
-                <div key={doctor.id} className="dr-item">
-                  <div className="dr-info">
-                    <div className="dr-avatar">
-                      <FaUserMd />
+              .map((doctor) => {
+                // <--- ADDED: Check if this specific doctor's wallet is processing --->
+                const isProcessing = processingWallets[doctor.wallet];
+
+                return (
+                  <div key={doctor.id} className="dr-item">
+                    <div className="dr-info">
+                      <div className="dr-avatar">
+                        <FaUserMd />
+                      </div>
+                      <div>
+                        <div className="dr-name">{doctor.name}</div>
+                        <div className="dr-wallet">{doctor.wallet}</div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="dr-name">{doctor.name}</div>
-                      <div className="dr-wallet">{doctor.wallet}</div>
+                    <div className="dr-actions">
+                      {isProcessing ? (
+                        // ONLY show the processing text/spinner when loading
+                        <span className="status-label processing">
+                          <FaSpinner className="spinner-icon" /> Processing...
+                        </span>
+                      ) : (
+                        // Show BOTH the status label AND the toggle switch when NOT loading
+                        <>
+                          <span
+                            className={`status-label ${doctor.active ? "status-active" : "status-revoked"}`}
+                          >
+                            {doctor.active ? "ACTIVE" : "REVOKED"}
+                          </span>
+                          <label className="switch">
+                            <input
+                              type="checkbox"
+                              checked={doctor.active}
+                              onChange={() => handleToggleAccess(doctor)}
+                            />
+                            <span className="slider"></span>
+                          </label>
+                        </>
+                      )}
                     </div>
                   </div>
-                  <div className="dr-actions">
-                    <span
-                      className={`status-label ${doctor.active ? "status-active" : "status-revoked"}`}
-                    >
-                      {doctor.active ? "ACTIVE" : "REVOKED"}
-                    </span>
-                    <label className="switch">
-                      <input
-                        type="checkbox"
-                        checked={doctor.active}
-                        onChange={() => handleToggleAccess(doctor)}
-                      />
-                      <span className="slider"></span>
-                    </label>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
           </div>
         </div>
 

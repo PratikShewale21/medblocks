@@ -51,32 +51,30 @@ const SecureVault = () => {
   const [downloadingFile, setDownloadingFile] = useState(null);
 
   const fileInputRef = useRef(null);
+
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
   const loadAccessStatus = async () => {
-  try {
-    const signer = await connectWallet();
-    if (!signer) return;
+    try {
+      const signer = await connectWallet();
+      if (!signer) return;
 
-    const patient = await signer.getAddress();
+      const patient = await signer.getAddress();
 
-    const res = await axios.get(
-      "http://localhost:8000/access/count",
-      {
+      const res = await axios.get("http://localhost:8000/access/count", {
         params: {
           patient: patient,
         },
-      }
-    );
+      });
 
-    setAccessStatus({
-      doctorCount: res.data.doctorCount,
-      lastAccess: "Live",
-    });
-
-  } catch (err) {
-    console.error("Failed to load access status", err);
-  }
-};
-
+      setAccessStatus({
+        doctorCount: res.data.doctorCount,
+        lastAccess: "Live",
+      });
+    } catch (err) {
+      console.error("Failed to load access status", err);
+    }
+  };
 
   /* ================= HELPERS ================= */
 
@@ -104,14 +102,11 @@ const SecureVault = () => {
 
       const address = await signer.getAddress();
 
-      const res = await axios.get(
-        `http://localhost:8000/records/${address}`,
-        {
-          params: {
-            requester_address: address,
-          },
-        }
-      );
+      const res = await axios.get(`http://localhost:8000/records/${address}`, {
+        params: {
+          requester_address: address,
+        },
+      });
 
       const formatted = (res.data.records || []).map((r) => ({
         id: r.cid,
@@ -122,7 +117,7 @@ const SecureVault = () => {
           : "application/octet-stream",
         fileSize: "-",
         recordType: r.record_type,
-        uploadDate: "-",
+        uploadDate: "-", // Future enhancement: pull real date from SC
         addedBy: "Patient",
         verified: true,
         ipfsHash: r.cid,
@@ -149,8 +144,15 @@ const SecureVault = () => {
   const handleFileSelect = (event) => {
     const file = event.target.files[0];
     if (file) {
+      if (file.size > MAX_FILE_SIZE) {
+        alert("File is too large! Please upload a file smaller than 10MB.");
+        // Reset the input so they can pick a new file
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        return;
+      }
       setSelectedFile(file);
       setUploadProgress(0);
+      setUploadSuccess(null);
     }
   };
 
@@ -175,112 +177,134 @@ const SecureVault = () => {
 
     const files = e.dataTransfer.files;
     if (files.length > 0) {
-      setSelectedFile(files[0]);
+      const file = files[0];
+      if (file.size > MAX_FILE_SIZE) {
+        alert("File is too large! Please drop a file smaller than 10MB.");
+        return;
+      }
+      setSelectedFile(file);
       setUploadProgress(0);
+      setUploadSuccess(null);
     }
+  };
+
+  const clearSelection = () => {
+    setSelectedFile(null);
+    setUploadProgress(0);
+    setUploadSuccess(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   /* ================= UPLOAD ================= */
 
   const handleUpload = async () => {
-  if (!selectedFile) {
-    alert("Select file first");
-    return;
-  }
+    if (!selectedFile) {
+      alert("Select file first");
+      return;
+    }
 
-  try {
-    setLoading(true);
-    setUploadProgress(10);
+    try {
+      setLoading(true);
+      setUploadProgress(0);
+      setUploadSuccess(null);
 
-    const signer = await connectWallet();
-    if (!signer) return;
+      const signer = await connectWallet();
+      if (!signer) return;
 
-    const patient = await signer.getAddress();
+      const patient = await signer.getAddress();
 
-    const form = new FormData();
-    form.append("file", selectedFile);
-    form.append("patient_address", patient);
-    form.append("record_type", recordType);
+      const form = new FormData();
+      form.append("file", selectedFile);
+      form.append("patient_address", patient);
+      form.append("record_type", recordType);
 
-    await axios.post(
-      "http://localhost:8000/records/upload",
-      form,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      }
-    );
+      // Upload with Real-Time Progress
+      const response = await axios.post(
+        "http://localhost:8000/records/upload",
+        form,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          onUploadProgress: (progressEvent) => {
+            const percentCompleted = Math.round(
+              (progressEvent.loaded * 100) / progressEvent.total
+            );
+            // Cap at 90% while waiting for the blockchain transaction to be mined
+            setUploadProgress(percentCompleted < 90 ? percentCompleted : 90);
+          },
+        }
+      );
 
-    setUploadProgress(100);
+      // Once the blockchain confirms, bump to 100%
+      setUploadProgress(100);
 
-    // ✅ Wait a bit so blockchain + backend sync
-    await new Promise((r) => setTimeout(r, 1500));
+      // Wait a bit so blockchain + backend sync cleanly
+      await new Promise((r) => setTimeout(r, 1500));
 
-    // ✅ Reload records
-    await loadRecords();
+      await loadRecords();
 
-    alert("Upload successful");
+      setUploadSuccess({
+        fileName: response.data.filename,
+        ipfsHash: response.data.cid,
+        transactionHash: response.data.transaction_hash,
+        etherscanLink: `https://sepolia.etherscan.io/tx/${response.data.transaction_hash}`,
+      });
 
-    // Reset form
-    setSelectedFile(null);
-    setNotes("");
-    setRecordType("Prescription");
+      // Reset form
+      setSelectedFile(null);
+      setNotes("");
+      setRecordType("Prescription");
+      if (fileInputRef.current) fileInputRef.current.value = "";
 
-  } catch (err) {
-    console.error(err);
-    alert("Upload failed");
-  } finally {
-    setLoading(false);
-    setUploadProgress(0);
-  }
-};
-
-
-  /* ================= VIEW ================= */
-
+    } catch (err) {
+      console.error(err);
+      alert("Upload failed");
+    } finally {
+      setLoading(false);
+      // Don't reset uploadProgress to 0 immediately so the user can see it hit 100%
+      setTimeout(() => setUploadProgress(0), 3000); 
+    }
+  };
 
   /* ================= DOWNLOAD ================= */
 
   const handleDownload = async (record) => {
-  try {
-    setDownloadingFile(record.cid);
+    try {
+      setDownloadingFile(record.cid);
 
-    const signer = await connectWallet();
-    if (!signer) return;
+      const signer = await connectWallet();
+      if (!signer) return;
 
-    const addr = await signer.getAddress();
+      const addr = await signer.getAddress();
 
-    const res = await axios.get(
-      `http://localhost:8000/records/view/${record.cid}`,
-      {
-        params: {
-          patient_address: addr,
-          requester_address: addr,
-        },
-        responseType: "blob", // 👈 IMPORTANT
-      }
-    );
+      const res = await axios.get(
+        `http://localhost:8000/records/view/${record.cid}`,
+        {
+          params: {
+            patient_address: addr,
+            requester_address: addr,
+          },
+          responseType: "blob", 
+        }
+      );
 
-    const blob = new Blob([res.data]);
+      const blob = new Blob([res.data]);
 
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = record.fileName; // 👈 force filename
-    document.body.appendChild(link);
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = record.fileName; 
+      document.body.appendChild(link);
 
-    link.click();
-    document.body.removeChild(link);
-
-  } catch (err) {
-    console.error(err);
-    alert("Download failed");
-  } finally {
-    setDownloadingFile(null);
-  }
-};
-
-
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error(err);
+      alert("Download failed");
+    } finally {
+      setDownloadingFile(null);
+    }
+  };
 
   /* ================= UI ================= */
 
@@ -295,7 +319,9 @@ const SecureVault = () => {
           </div>
           <div className="wallet-info">
             <span className="wallet-address">
-              {user?.walletAddress ? `${user.walletAddress.slice(0, 6)}...${user.walletAddress.slice(-4)}` : 'Not Connected'}
+              {user?.walletAddress
+                ? `${user.walletAddress.slice(0, 6)}...${user.walletAddress.slice(-4)}`
+                : "Not Connected"}
             </span>
             <span className="network">Sepolia Testnet</span>
           </div>
@@ -308,7 +334,7 @@ const SecureVault = () => {
             </div>
             <div className="status-item">
               <FaClock />
-              <span>{accessStatus?.lastAccess || 'Never'}</span>
+              <span>{accessStatus?.lastAccess || "Never"}</span>
             </div>
           </div>
         </div>
@@ -321,32 +347,52 @@ const SecureVault = () => {
             <h3>Upload Medical Records</h3>
             <p>Securely store your medical records on the blockchain</p>
           </div>
-          
-          <div 
-            className={`upload-area ${dragActive ? 'drag-active' : ''}`}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <div className="upload-icon">
-              <FaUpload />
+
+          {!selectedFile && (
+            <div
+              className={`upload-area ${dragActive ? "drag-active" : ""}`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <div className="upload-icon">
+                <FaUpload />
+              </div>
+              <div className="upload-text">
+                <h4>Drag & drop your files here</h4>
+                <p>or click to browse (Max 10MB)</p>
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png"
+                onChange={handleFileSelect}
+                className="hidden-input"
+              />
             </div>
-            <div className="upload-text">
-              <h4>Drag & drop your files here</h4>
-              <p>or click to browse</p>
-            </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".pdf,.jpg,.jpeg,.png"
-              onChange={handleFileSelect}
-              className="hidden-input"
-            />
-          </div>
+          )}
 
           {selectedFile && (
             <div className="file-info">
+              <button
+                className="clear-file-btn"
+                onClick={clearSelection}
+                disabled={loading}
+                style={{
+                  float: "right",
+                  background: "none",
+                  border: "none",
+                  color: "#ef4444",
+                  cursor: loading ? "not-allowed" : "pointer",
+                  fontSize: "14px",
+                  fontWeight: "bold",
+                  opacity: loading ? 0.5 : 1
+                }}
+              >
+                ✕ Remove
+              </button>
+
               <div className="file-details">
                 <div className="file-icon">
                   {getRecordIcon(selectedFile.type)}
@@ -356,14 +402,15 @@ const SecureVault = () => {
                   <p>{formatFileSize(selectedFile.size)}</p>
                 </div>
               </div>
-              
+
               <div className="upload-options">
                 <div className="form-group">
                   <label>Record Type</label>
-                  <select 
-                    value={recordType} 
+                  <select
+                    value={recordType}
                     onChange={(e) => setRecordType(e.target.value)}
                     className="form-select"
+                    disabled={loading}
                   >
                     <option value="Prescription">Prescription</option>
                     <option value="Lab Report">Lab Report</option>
@@ -373,7 +420,7 @@ const SecureVault = () => {
                     <option value="Other">Other</option>
                   </select>
                 </div>
-                
+
                 <div className="form-group">
                   <label>Notes (Optional)</label>
                   <textarea
@@ -382,24 +429,25 @@ const SecureVault = () => {
                     placeholder="Add any relevant notes about this record..."
                     className="form-textarea"
                     rows={3}
+                    disabled={loading}
                   />
                 </div>
               </div>
-              
-              <button 
+
+              <button
                 className="upload-btn"
                 onClick={handleUpload}
                 disabled={loading}
               >
                 <FaLock />
-                {loading ? 'Encrypting & Uploading...' : 'Encrypt & Upload'}
+                {loading ? `Encrypting & Uploading (${uploadProgress}%)...` : "Encrypt & Upload"}
               </button>
-              
+
               {uploadProgress > 0 && (
                 <div className="progress-bar">
-                  <div 
+                  <div
                     className="progress-fill"
-                    style={{ width: `${uploadProgress}%` }}
+                    style={{ width: `${uploadProgress}%`, transition: 'width 0.2s ease-in-out' }}
                   ></div>
                 </div>
               )}
@@ -414,7 +462,7 @@ const SecureVault = () => {
           <h3>Your Medical Records</h3>
           <p>Securely stored on IPFS with blockchain verification</p>
         </div>
-        
+
         <div className="records-grid">
           {records.map((record) => (
             <div key={record.id} className="record-card">
@@ -442,10 +490,12 @@ const SecureVault = () => {
                   )}
                 </div>
               </div>
-              
+
               <div className="record-actions">
-                <button 
-                  className={`action-btn download-btn ${downloadingFile === record.id ? 'loading' : ''}`}
+                <button
+                  className={`action-btn download-btn ${
+                    downloadingFile === record.id ? "loading" : ""
+                  }`}
                   onClick={() => handleDownload(record)}
                   disabled={downloadingFile === record.id}
                 >
@@ -462,7 +512,7 @@ const SecureVault = () => {
                   )}
                 </button>
               </div>
-              
+
               {record.ipfsHash && (
                 <div className="record-hash">
                   <span className="hash-label">IPFS Hash:</span>
@@ -472,7 +522,7 @@ const SecureVault = () => {
             </div>
           ))}
         </div>
-        
+
         {records.length === 0 && (
           <div className="empty-state">
             <FaFolderOpen />
@@ -488,20 +538,27 @@ const SecureVault = () => {
           <h3>Access Status</h3>
           <p>Manage who can view your medical records</p>
         </div>
-        
+
         <div className="status-info">
           <div className="status-item">
             <span className="status-label">Doctors with Access:</span>
-            <span className="status-value">{accessStatus?.doctorCount || 0}</span>
+            <span className="status-value">
+              {accessStatus?.doctorCount || 0}
+            </span>
           </div>
           <div className="status-item">
             <span className="status-label">Last Access:</span>
-            <span className="status-value">{accessStatus?.lastAccess || 'Never'}</span>
+            <span className="status-value">
+              {accessStatus?.lastAccess || "Never"}
+            </span>
           </div>
         </div>
-        
+
         <div className="panel-actions">
-          <button className="link-btn" onClick={() => window.location.href = '/patient/share-access'}>
+          <button
+            className="link-btn"
+            onClick={() => (window.location.href = "/patient/share-access")}
+          >
             <FaUsers />
             Manage Access
           </button>
@@ -512,15 +569,17 @@ const SecureVault = () => {
       <section className="security-panel">
         <div className="panel-header">
           <h3>Security Information</h3>
-          <button 
+          <button
             className="toggle-btn"
             onClick={() => setShowSecurityInfo(!showSecurityInfo)}
           >
-            {showSecurityInfo ? 'Hide Details' : 'Show Details'}
+            {showSecurityInfo ? "Hide Details" : "Show Details"}
           </button>
         </div>
-        
-        <div className={`security-badges ${showSecurityInfo ? 'expanded' : ''}`}>
+
+        <div
+          className={`security-badges ${showSecurityInfo ? "expanded" : ""}`}
+        >
           <div className="security-badge">
             <FaShieldAlt className="badge-icon" />
             <span>AES-256 Encryption</span>
@@ -538,13 +597,25 @@ const SecureVault = () => {
             <span>Patient Controlled</span>
           </div>
         </div>
-        
+
         {showSecurityInfo && (
           <div className="security-details">
             <h4>How It Works:</h4>
-            <p>Your medical records are encrypted using AES-256 encryption before being stored on IPFS. Each upload creates a unique hash that's recorded on the blockchain, ensuring data integrity and immutability.</p>
-            <p>Only doctors you've granted access to can view your records, and you maintain full control over who can see your medical information.</p>
-            <p>The blockchain verification ensures that your records haven't been tampered with since upload.</p>
+            <p>
+              Your medical records are encrypted using AES-256 encryption before
+              being stored on IPFS. Each upload creates a unique hash that's
+              recorded on the blockchain, ensuring data integrity and
+              immutability.
+            </p>
+            <p>
+              Only doctors you've granted access to can view your records, and
+              you maintain full control over who can see your medical
+              information.
+            </p>
+            <p>
+              The blockchain verification ensures that your records haven't been
+              tampered with since upload.
+            </p>
           </div>
         )}
       </section>
@@ -567,9 +638,9 @@ const SecureVault = () => {
               </div>
             </div>
             <div className="etherscan-link">
-              <a 
-                href={uploadSuccess.etherscanLink} 
-                target="_blank" 
+              <a
+                href={uploadSuccess.etherscanLink}
+                target="_blank"
                 rel="noopener noreferrer"
                 className="etherscan-btn"
               >
@@ -584,4 +655,3 @@ const SecureVault = () => {
 };
 
 export default SecureVault;
-
