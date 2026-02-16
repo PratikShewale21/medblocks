@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation, Link } from 'react-router-dom';
+import { ethers } from 'ethers';
 import { 
   FaHeartbeat, 
   FaFolderOpen, 
@@ -16,6 +17,26 @@ import './PatientLayout.css';
 const PatientLayout = () => {
   const { logout } = useAuth();
   const location = useLocation();
+  
+  // State to store the connected wallet address
+  const [walletAddress, setWalletAddress] = useState("");
+
+  // Fetch the wallet address on load
+  useEffect(() => {
+    const fetchWallet = async () => {
+      if (window.ethereum) {
+        try {
+          const provider = new ethers.BrowserProvider(window.ethereum);
+          const signer = await provider.getSigner();
+          const address = await signer.getAddress();
+          setWalletAddress(address);
+        } catch (err) {
+          console.error("Wallet not connected", err);
+        }
+      }
+    };
+    fetchWallet();
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -71,7 +92,12 @@ const PatientLayout = () => {
         <div className="sidebar-footer">
           <div className="wallet">
             <FaLinkIcon />
-            <span>0x71C...A4f</span>
+            {/* Display dynamic wallet address here */}
+            <span>
+              {walletAddress 
+                ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` 
+                : "Not Connected"}
+            </span>
           </div>
           <button className="logout-btn" onClick={handleLogout}>
             <FaSignOutAlt />

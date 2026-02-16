@@ -208,16 +208,7 @@ export default function ReportSummary() {
               <p>AI-generated comprehensive health insights and analysis</p>
             </div>
           </div>
-          <div className="header-stats">
-            <div className="stat-item">
-              <span className="stat-value">{reports.length}</span>
-              <span className="stat-label">Total Reports</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-value">{reports.filter(r => r.status === 'completed').length}</span>
-              <span className="stat-label">Completed</span>
-            </div>
-          </div>
+          
         </div>
 
         <div className="summary-content">
