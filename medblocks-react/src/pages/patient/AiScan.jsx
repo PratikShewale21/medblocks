@@ -127,9 +127,7 @@ export default function AiScan() {
             <p>Upload medical reports for advanced predictive analysis</p>
           </div>
         </div>
-        <div className="header-badge">
-          <FaShieldAlt /> HIPAA Compliant
-        </div>
+      
       </div>
 
       <div className="scan-content">
