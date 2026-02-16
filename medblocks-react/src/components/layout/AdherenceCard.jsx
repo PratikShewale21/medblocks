@@ -1,20 +1,38 @@
 import { useEffect, useState } from "react";
 import { predictAdherence } from "../api/adherenceApi";
 
+const getNextDoseRisk = () => {
+  if (!result) return "--";
+
+  const risk = result.risk_percentage;
+
+  if (risk >= 70) return "LIKELY TO MISS";
+  if (risk >= 40) return "MODERATE RISK";
+  return "LIKELY TO TAKE";
+};
+
 export default function AdherenceCard() {
   const [result, setResult] = useState(null);
 
+  const getNextDoseRisk = () => {
+    if (!result) return "--";
+
+    const risk = result.risk_percentage;
+
+    if (risk >= 70) return "LIKELY TO MISS";
+    if (risk >= 40) return "MODERATE RISK";
+    return "LIKELY TO TAKE";
+  };
+
   useEffect(() => {
     const fetchData = async () => {
-      const payload = {
-        missed_doses_last_7_days: 1,
-        avg_delay_minutes: 45,
-        adherence_rate_30_days: 68
-      };
-
-      const res = await predictAdherence(payload);
-      setResult(res);
-    };
+  try {
+    const res = await predictAdherence();
+    setResult(res);
+  } catch (error) {
+    console.error('Failed to fetch adherence data:', error);
+  }
+};
 
     fetchData();
   }, []);
@@ -23,11 +41,11 @@ export default function AdherenceCard() {
 
   return (
     <div className="adherence-card">
-      <h2>{result.risk_percentage}% Prob.</h2>
+      <h2>{result.risk_percentage} Prob.</h2>
       <p>{result.risk_level} Risk</p>
-
-      {result.will_miss_next_dose && (
-        <p className="warning">High chance of missing tonight’s dose</p>
+      
+      {getNextDoseRisk() && (
+        <p className="warning">High chance of missing tonight's dose</p>
       )}
     </div>
   );

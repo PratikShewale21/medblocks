@@ -17,15 +17,23 @@ class SimpleMLSummarizer:
         # Step 2: Generate summary based on actual text
         summary = self._generate_content_summary(text, content_analysis)
         
-        # Step 3: Classify document type
+        # Step 3: Generate different summary types
+        executive_summary = self._generate_executive_summary(text, content_analysis)
+        key_findings = self._generate_key_findings(text, content_analysis)
+        risk_assessment = self._generate_risk_assessment(text, content_analysis)
+        
+        # Step 4: Classify document type
         doc_type = self._classify_by_content(text)
         
-        # Step 4: Generate recommendations based on content
+        # Step 5: Generate recommendations based on content
         recommendations = self._generate_content_recommendations(text, content_analysis, doc_type)
         
         return {
             "summary_type": "content_based_ml",
             "universal_summary": summary,
+            "executive_summary": executive_summary,
+            "key_findings": key_findings,
+            "risk_assessment": risk_assessment,
             "extracted_entities": content_analysis,
             "document_type": doc_type,
             "recommendations": recommendations,
@@ -176,6 +184,109 @@ class SimpleMLSummarizer:
             summary = "📄 Content-Based Summary:\n\n" + ". ".join(sentences[:3]) + "."
         
         return summary
+    
+    def _generate_executive_summary(self, text: str, content: Dict) -> str:
+        """Generate executive summary with different content"""
+        exec_parts = []
+        
+        # Overall assessment based on conditions
+        if content["conditions"]:
+            severity = len(content["conditions"])
+            if severity >= 3:
+                exec_parts.append("Patient presents with multiple medical concerns requiring comprehensive care")
+            elif severity == 2:
+                exec_parts.append("Patient shows moderate medical complexity with co-occurring conditions")
+            else:
+                exec_parts.append("Patient presents with isolated medical condition for focused treatment")
+        
+        # Treatment urgency based on treatments
+        if content["treatments"]:
+            if any('nsaid' in t.lower() for t in content["treatments"]):
+                exec_parts.append("Pain management protocol initiated with anti-inflammatory treatment")
+            elif any('muscle relax' in t.lower() for t in content["treatments"]):
+                exec_parts.append("Musculoskeletal injury management with relaxation therapy")
+            elif any('rest' in t.lower() for t in content["treatments"]):
+                exec_parts.append("Conservative treatment approach with activity modification")
+        
+        # Location-based assessment
+        if content["locations"]:
+            if any('arm' in loc.lower() or 'forearm' in loc.lower() for loc in content["locations"]):
+                exec_parts.append("Upper extremity injury affecting daily activities")
+            elif any('leg' in loc.lower() or 'knee' in loc.lower() for loc in content["locations"]):
+                exec_parts.append("Lower extremity mobility impairment detected")
+        
+        return "📄 Executive Summary:\n\n" + ". ".join(exec_parts) + "." if exec_parts else "📄 Executive Summary:\n\nMedical assessment completed with standard evaluation protocol."
+    
+    def _generate_key_findings(self, text: str, content: Dict) -> str:
+        """Generate key findings with different content"""
+        findings = []
+        
+        # Condition-specific findings
+        if content["conditions"]:
+            if any('fracture' in c.lower() for c in content["conditions"]):
+                findings.append("Bone integrity disruption confirmed through imaging studies")
+            if any('contusion' in c.lower() for c in content["conditions"]):
+                findings.append("Soft tissue trauma with localized swelling and discoloration")
+            if any('pain' in c.lower() for c in content["conditions"]):
+                findings.append("Patient reports subjective pain levels requiring management")
+        
+        # Treatment-specific findings
+        if content["treatments"]:
+            if any('nsaid' in t.lower() for t in content["treatments"]):
+                findings.append("Anti-inflammatory protocol implemented for pain and swelling control")
+            if any('muscle relax' in t.lower() for t in content["treatments"]):
+                findings.append("Pharmacological muscle relaxation therapy prescribed")
+            if any('rest' in t.lower() for t in content["treatments"]):
+                findings.append("Activity modification recommended for tissue recovery")
+        
+        # Location-specific findings
+        if content["locations"]:
+            if any('right' in loc.lower() for loc in content["locations"]):
+                findings.append("Right-sided impact with compensatory movement patterns")
+            if any('forearm' in loc.lower() for loc in content["locations"]):
+                findings.append("Forearm involvement affecting grip strength and range of motion")
+        
+        return "📄 Key Findings:\n\n" + ". ".join(findings) + "." if findings else "📄 Key Findings:\n\nStandard clinical examination findings documented."
+    
+    def _generate_risk_assessment(self, text: str, content: Dict) -> str:
+        """Generate risk assessment with different content"""
+        risk_factors = []
+        risk_level = "Low"
+        
+        # Assess based on conditions
+        if content["conditions"]:
+            if any('fracture' in c.lower() for c in content["conditions"]):
+                risk_factors.append("Bone injury requires extended healing period")
+                risk_level = "Moderate"
+            if any('contusion' in c.lower() for c in content["conditions"]):
+                risk_factors.append("Soft tissue damage with potential complications")
+            if len(content["conditions"]) > 2:
+                risk_level = "High"
+                risk_factors.append("Multiple comorbidities increase treatment complexity")
+        
+        # Assess based on treatments
+        if content["treatments"]:
+            if len(content["treatments"]) >= 3:
+                risk_factors.append("Polypharmacy requires careful monitoring")
+                if risk_level != "High":
+                    risk_level = "Moderate"
+        
+        # Location-based risk
+        if content["locations"]:
+            if any('arm' in loc.lower() or 'forearm' in loc.lower() for loc in content["locations"]):
+                risk_factors.append("Upper extremity injury may impact occupational activities")
+        
+        # Overall risk statement
+        if risk_level == "High":
+            risk_statement = "High-risk presentation requiring intensive medical management and close monitoring"
+        elif risk_level == "Moderate":
+            risk_statement = "Moderate risk with potential for complications if treatment not followed"
+        else:
+            risk_statement = "Low-risk presentation with favorable prognosis for full recovery"
+        
+        all_factors = ". ".join(risk_factors) + ". " + risk_statement if risk_factors else risk_statement
+        
+        return f"📄 Risk Assessment:\n\n{all_factors}"
     
     def _classify_by_content(self, text: str) -> str:
         """Classify document based on actual content"""

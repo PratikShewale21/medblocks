@@ -4,6 +4,10 @@ from pydantic import BaseModel
 from typing import Dict, Any, List, Optional
 import tempfile
 import os
+from predictors.adherence_predictor import predict_adherence as ml_predict_adherence
+from datetime import datetime
+import statistics
+
 
 from predictors.diabetes_predictor import predict_diabetes
 from predictors.enhanced_summary import generate_enhanced_summary
@@ -189,11 +193,11 @@ async def upload_and_summarize_pdf(file: UploadFile = File(...)):
         try:
             ml_result = analyze_with_simple_ml(text)
             
-            # Format ML results for frontend
+            # Create enhanced summary object
             summary = {
-                "executive_summary": ml_result.get("universal_summary", "ML analysis completed"),
-                "key_findings": ml_result.get("universal_summary", "Analysis completed"),
-                "risk_assessment": f"Document type: {ml_result.get('document_type', 'unknown')}",
+                "executive_summary": ml_result.get("executive_summary", "Executive summary generated"),
+                "key_findings": ml_result.get("key_findings", "Key findings identified"),
+                "risk_assessment": ml_result.get("risk_assessment", "Risk assessment completed"),
                 "recommendations": "\n".join(ml_result.get("recommendations", ["Document processed successfully"])),
                 "follow_up": "Consult relevant professional if needed",
                 "patient_summary": ml_result.get("universal_summary", "ML analysis completed"),
@@ -884,172 +888,46 @@ async def test_ml_comparison():
         print(f"Error in test-ml: {e}")
         raise HTTPException(status_code=500, detail=f"Test failed: {str(e)}")
 
+
 @app.post("/predict/adherence")
-async def predict_adherence(data: dict):
-    """
-    Direct adherence prediction endpoint for React frontend
-    """
-    try:
-        # Import adherence predictor
-        from predictors.adherence_predictor import predict_adherence
-        
-        print(f"🔍 PREDICT ADHERENCE CALLED!")
-        print(f"🔍 Received data: {data}")
-        
-        # Calculate real adherence metrics from medication data
-        medications = data.get("medications", [])
-        print(f"🔍 Medications received: {len(medications)}")
-        print(f"🔍 Medications data: {medications}")
-        
-        real_adherence_rate = calculate_adherence_rate(medications)
-        print(f"🔍 Adherence calculation completed: {real_adherence_rate}%")
-        
-        real_missed_doses = calculate_missed_doses(medications)
-        print(f"🔍 Missed doses calculation completed: {real_missed_doses}")
-        
-        real_avg_delay = data.get("adherence_metrics", {}).get("current_delay_minutes", 0)
-        
-        print(f"🔍 Calculated metrics: adherence={real_adherence_rate}%, missed={real_missed_doses}, delay={real_avg_delay}")
-        
-        # If current_delay_minutes is 0, try to calculate from most recent taken dose
-        if real_avg_delay == 0 and medications:
-            for med in medications:
-                if med.get("taken_times"):
-                    # Get most recent taken time
-                    recent_taken = max(med["taken_times"], key=lambda x: x.get("timestamp", 0))
-                    if recent_taken.get("timeSlot"):
-                        # Simple delay calculation (approximate)
-                        real_avg_delay = 120  # Default to 2 hours if we can't calculate
-                        break
-        
-        print(f"🔍 Calculated metrics: adherence={real_adherence_rate}%, missed={real_missed_doses}, delay={real_avg_delay}")
-        
-        # Create AdherenceInput object with real calculated values
-        adherence_input = AdherenceInput(
-            missed_doses_last_7_days=real_missed_doses,
-            avg_delay_minutes=real_avg_delay,
-            adherence_rate_30_days=real_adherence_rate
-        )
-        
-        print(f"🔍 Adherence input: missed_doses={adherence_input.missed_doses_last_7_days}, delay={adherence_input.avg_delay_minutes}, rate={adherence_input.adherence_rate_30_days}")
-        
-        # Get prediction from your trained model
-        prediction = predict_adherence(adherence_input)
-        
-        print(f"🔍 ML prediction: {prediction}")
-        
-        # Calculate next medication time
-        next_med_time = "Today, 8:00 AM"  # Default, can be calculated from medications
-        
-        # Generate recommendations based on prediction
-        recommendations = []
-        if prediction["risk_percentage"] > 50:
-            recommendations.extend([
-                "Take your next dose on time to reduce risk",
-                "Set additional reminders for medication times"
-            ])
-        else:
-            recommendations.extend([
-                "Continue taking medications on time",
-                "Keep track of your medication schedule"
-            ])
-        
-        result = {
-            "will_miss_next_dose": prediction["will_miss_next_dose"],
-            "risk_percentage": prediction["risk_percentage"],
-            "risk_level": prediction["risk_level"],
-            "recommendations": recommendations,
-            "adherence_score": int(real_adherence_rate),
-            "next_risk_time": next_med_time,
-            "model_confidence": 0.95,
-            "missed_doses_last_7_days": real_missed_doses,
-            "avg_delay_minutes": real_avg_delay,
-            "ml_features": {
-                "model_used": True,
-                "predictor": "adherence_predictor.py",
-                "features": ["missed_doses_last_7_days", "avg_delay_minutes", "adherence_rate_30_days"],
-                "raw_prediction": prediction,
-                "calculated_missed_doses": real_missed_doses,
-                "calculated_avg_delay": real_avg_delay
-            }
-        }
-        
-        # Ensure the values are at the top level for frontend
-        result["missed_doses_last_7_days"] = real_missed_doses
-        result["avg_delay_minutes"] = real_avg_delay
-        
-        print(f"🔍 Result: {result}")
-        return result
-        
-    except Exception as e:
-        print(f"Error in predict_adherence: {e}")
-        raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
+def predict_adherence_api(data: dict):
+    doses = data.get("doses", [])
 
+    total_doses = len(doses)
+    taken_doses = 0
+    delays = []
 
-# =======================
-# HELPER FUNCTIONS
-# =======================
+    for dose in doses:
+        if dose["taken"] and dose["taken_at"]:
+            taken_doses += 1
 
-def extract_adherence_data_from_text(text: str) -> Dict[str, Any]:
-    """Extract adherence metrics from text"""
-    import re
-    
-    adherence_data = {}
-    
-    # Extract overall adherence rate
-    adherence_patterns = [
-        r'overall adherence rate[:\s]*(\d+\.?\d*)%',
-        r'adherence rate[:\s]*(\d+\.?\d*)%',
-        r'adherence[:\s]*(\d+\.?\d*)%',
-        r'compliance rate[:\s]*(\d+\.?\d*)%'
-    ]
-    
-    for pattern in adherence_patterns:
-        match = re.search(pattern, text, re.IGNORECASE)
-        if match:
-            adherence_data['adherence_rate_30_days'] = float(match.group(1))
-            break
-    
-    # Extract missed doses in last 7 days
-    missed_patterns = [
-        r'last 7 days.*?missed doses[:\s]*(\d+)',
-        r'missed doses.*?last 7 days[:\s]*(\d+)',
-        r'recent 7-day.*?missed doses[:\s]*(\d+)',
-        r'7-day.*?missed[:\s]*(\d+)'
-    ]
-    
-    for pattern in missed_patterns:
-        match = re.search(pattern, text, re.IGNORECASE)
-        if match:
-            adherence_data['missed_doses_last_7_days'] = int(match.group(1))
-            break
-    
-    # Extract average delay
-    delay_patterns = [
-        r'average delay[:\s]*(\d+\.?\d*)\s*(?:minutes?|mins?)',
-        r'avg delay[:\s]*(\d+\.?\d*)\s*(?:minutes?|mins?)',
-        r'delay.*?average[:\s]*(\d+\.?\d*)\s*(?:minutes?|mins?)'
-    ]
-    
-    for pattern in delay_patterns:
-        match = re.search(pattern, text, re.IGNORECASE)
-        if match:
-            adherence_data['avg_delay_minutes'] = int(float(match.group(1)))
-            break
-    
-    # Set defaults if not found
-    if 'adherence_rate_30_days' not in adherence_data:
-        adherence_data['adherence_rate_30_days'] = 75.0  # Default assumption
-    
-    if 'missed_doses_last_7_days' not in adherence_data:
-        adherence_data['missed_doses_last_7_days'] = 3  # Default assumption
-    
-    if 'avg_delay_minutes' not in adherence_data:
-        adherence_data['avg_delay_minutes'] = 30  # Default assumption
-    
-    return adherence_data
+            scheduled = datetime.strptime(dose["scheduled_time"], "%H:%M")
+            taken_time = datetime.fromtimestamp(dose["taken_at"] / 1000)
 
+            delay = abs(
+                (taken_time.hour * 60 + taken_time.minute)
+                - (scheduled.hour * 60 + scheduled.minute)
+            )
+            delays.append(delay)
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="localhost", port=8002)
+    missed_doses = total_doses - taken_doses
+    avg_delay = int(statistics.mean(delays)) if delays else 0
+    adherence_rate = int((taken_doses / total_doses) * 100) if total_doses > 0 else 0
+
+    # Create a simple object to pass to predictor (expects object with attributes)
+    class AdherenceData:
+        def __init__(self, missed_doses_last_7_days, avg_delay_minutes, adherence_rate_30_days):
+            self.missed_doses_last_7_days = missed_doses_last_7_days
+            self.avg_delay_minutes = avg_delay_minutes
+            self.adherence_rate_30_days = adherence_rate_30_days
+    
+    MAX_DELAY = 120  # minutes (2 hours)
+    avg_delay_capped = min(avg_delay, MAX_DELAY)
+    ml_input = AdherenceData(missed_doses, avg_delay_capped, adherence_rate)
+
+    prediction = ml_predict_adherence(ml_input)
+
+    return {
+        "metrics": ml_input,
+        "prediction": prediction
+    }

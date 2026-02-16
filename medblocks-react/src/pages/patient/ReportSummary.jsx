@@ -355,10 +355,36 @@ export default function ReportSummary() {
                   </div>
                 </div>
                 <div className="report-actions">
-                  <button className="view-btn">
-                    <FaEye />
-                  </button>
-                  <button className="download-btn">
+                  <button 
+                    className="download-btn"
+                    onClick={() => {
+                      const reportData = {
+                        title: report.title,
+                        date: report.date,
+                        type: report.type,
+                        status: report.status,
+                        summary: report.summary,
+                        recommendations: report.recommendations,
+                        executiveSummary: report.executiveSummary,
+                        keyFindings: report.keyFindings,
+                        riskAssessment: report.riskAssessment,
+                        timestamp: new Date().toISOString()
+                      };
+                      
+                      const blob = new Blob([JSON.stringify(reportData, null, 2)], {
+                        type: 'application/json'
+                      });
+                      
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `report-summary-${Date.now()}.json`;
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      URL.revokeObjectURL(url);
+                    }}
+                  >
                     <FaDownload />
                   </button>
                 </div>

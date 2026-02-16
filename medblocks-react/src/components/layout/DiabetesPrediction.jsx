@@ -78,6 +78,44 @@ export default function DiabetesPrediction() {
               </ul>
             </div>
           )}
+          
+          <div className="action-buttons">
+            <button 
+              className="btn-secondary"
+              onClick={() => {
+                const reportData = {
+                  prediction: result,
+                  timestamp: new Date().toISOString(),
+                  patientInfo: {
+                    name: "Patient Name",
+                    age: 51,
+                    pregnancies: 5,
+                    glucose: 166,
+                    bp: 72,
+                    skin: 19,
+                    insulin: 175,
+                    bmi: 25.8,
+                    dpf: 0.587
+                  }
+                };
+                
+                const blob = new Blob([JSON.stringify(reportData, null, 2)], {
+                  type: 'application/json'
+                });
+                
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `diabetes-report-${Date.now()}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+              }}
+            >
+              Download Report
+            </button>
+          </div>
         </div>
       )}
     </div>

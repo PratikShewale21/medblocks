@@ -302,8 +302,32 @@ export default function AiScan() {
 
               {/* Action Buttons */}
               <div className="action-buttons">
-                <button className="btn-primary">Schedule Consultation</button>
-                <button className="btn-secondary">Download Report</button>
+                <button 
+                  className="btn-secondary"
+                  onClick={() => {
+                    const reportData = {
+                      prediction: result.diabetes_prediction,
+                      extractedData: extractedData,
+                      timestamp: new Date().toISOString(),
+                      fileName: uploadedFile.name
+                    };
+                    
+                    const blob = new Blob([JSON.stringify(reportData, null, 2)], {
+                      type: 'application/json'
+                    });
+                    
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `diabetes-report-${Date.now()}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                  }}
+                >
+                  Download Report
+                </button>
               </div>
             </div>
           </div>
