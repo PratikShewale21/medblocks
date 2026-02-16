@@ -1,201 +1,120 @@
-/* Doctor Dashboard Styles */
+.dashboard-container {
+    padding: 30px;
+}
 
-/* --- Doctor Header --- */
-.doctor-header {
+.dashboard-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px 40px;
-    background: white;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 30px;
+    margin-bottom: 40px;
 }
 
-.search-bar {
+.header-text h1 {
+    font-size: 2.2rem;
+    margin-bottom: 5px;
+    color: #0f172a;
+}
+
+.header-text h1 span {
+    color: #3b82f6;
+}
+
+.connection-badge {
     display: flex;
     align-items: center;
-    gap: 12px;
-    background: #f8fafc;
-    padding: 12px 16px;
-    border-radius: 12px;
-    border: 1px solid var(--border);
-    max-width: 400px;
-    flex: 1;
-}
-
-.search-bar input {
-    border: none;
-    background: transparent;
-    outline: none;
-    flex: 1;
-    font-size: 14px;
-    color: var(--text);
-}
-
-.search-bar input::placeholder {
-    color: var(--text-muted);
-}
-
-.search-bar i {
-    color: var(--text-muted);
-    font-size: 16px;
-}
-
-.header-info {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-}
-
-.chain-info {
-    font-size: 14px;
-    color: var(--text-muted);
-}
-
-.doctor-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    border: 2px solid var(--primary);
-}
-
-/* --- Dashboard Grid --- */
-.dashboard-grid {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 24px;
-    padding: 0 40px 40px;
-}
-
-/* --- Section Cards --- */
-.card {
-    background: var(--bg-card);
-    border-radius: var(--radius-lg);
-    padding: 24px;
-    box-shadow: var(--shadow-card);
-    margin-bottom: 24px;
-}
-
-.card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-}
-
-.card-title {
-    font-size: 1.1rem;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-/* Risk Alerts List (ML Feature) */
-.patient-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px;
-    border-bottom: 1px solid #F1F5F9;
-}
-
-.patient-row:last-child {
-    border: none;
-}
-
-.risk-score {
-    padding: 4px 12px;
-    border-radius: 6px;
-    font-weight: 700;
-    font-size: 0.8rem;
-}
-
-.high-risk {
-    background: #FEE2E2;
-    color: var(--risk);
-}
-
-.btn-view {
-    background: var(--primary);
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 0.8rem;
+    padding: 10px 20px;
+    border-radius: 30px;
     font-weight: 600;
+    font-size: 0.9rem;
 }
 
-/* Access Requests (Blockchain Feature) */
-.status-pill {
-    font-size: 0.7rem;
-    padding: 3px 10px;
-    border-radius: 50px;
+.connection-badge.online { background: #dcfce7; color: #166534; }
+.connection-badge.offline { background: #fee2e2; color: #991b1b; }
+
+.pulse-dot {
+    height: 10px;
+    width: 10px;
+    background-color: #10b981;
+    border-radius: 50%;
+    margin-right: 10px;
+    animation: pulse-animation 2s infinite;
+}
+
+@keyframes pulse-animation {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 25px;
+    margin-bottom: 40px;
+}
+
+.stat-card {
+    background: white;
+    padding: 25px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.stat-icon {
+    width: 55px;
+    height: 55px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-right: 20px;
+}
+
+.patient-bg { background: #eff6ff; color: #3b82f6; }
+.vault-bg { background: #faf5ff; color: #a855f7; }
+.network-bg { background: #f0fdf4; color: #22c55e; }
+.wallet-bg { background: #f8fafc; color: #64748b; }
+
+.dashboard-content-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 30px;
+}
+
+.dashboard-section {
+    background: white;
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.action-card-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background: #f8fafc;
+    border-radius: 15px;
+    margin-bottom: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.action-card-item:hover {
+    background: #f1f5f9;
+    transform: translateX(10px);
+}
+
+.log-item {
+    padding: 15px 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.log-time {
+    font-size: 0.75rem;
+    color: #94a3b8;
     font-weight: 700;
-}
-
-.pending {
-    background: #FEF3C7;
-    color: #92400E;
-}
-
-.approved {
-    background: #D1FAE5;
-    color: #065F46;
-}
-
-/* Summary Area (NLP Feature) */
-.summary-box {
-    background: #EEF2FF;
-    border-left: 4px solid var(--primary);
-    padding: 15px;
-    border-radius: 8px;
-    margin-top: 10px;
-}
-
-.hash-code {
-    font-family: monospace;
-    font-size: 0.7rem;
-    color: #94A3B8;
-    margin-top: 5px;
-    display: block;
-}
-
-/* Responsive Design */
-@media (max-width: 1024px) {
-    .dashboard-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .sidebar {
-        width: 240px;
-    }
-}
-
-@media (max-width: 768px) {
-    .doctor-layout {
-        flex-direction: column;
-        height: auto;
-        overflow: visible;
-    }
-    
-    .sidebar {
-        width: 100%;
-        padding: 15px;
-    }
-    
-    .main-content {
-        padding: 20px;
-    }
-    
-    .search-bar {
-        width: 100%;
-    }
-    
-    .doctor-header {
-        flex-direction: column;
-        gap: 15px;
-        align-items: stretch;
-    }
 }

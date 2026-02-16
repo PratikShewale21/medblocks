@@ -5,7 +5,6 @@ import {
   FaHome, 
   FaUsers, 
   FaShieldAlt, 
-  FaCog, 
   FaSignOutAlt,
   FaLink as FaLinkIcon
 } from 'react-icons/fa';
@@ -75,7 +74,6 @@ const DoctorLayout = () => {
         <div className="sidebar-footer">
           <div className="wallet">
             <FaLinkIcon />
-            {/* Display dynamic wallet address here */}
             <span>
               {walletAddress 
                 ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` 

@@ -1,106 +1,123 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { ethers } from 'ethers';
 import { 
-  FaSearch,
-  FaExclamationTriangle,
-  FaRobot,
-  FaLink,
-  FaPills
+  FaUsers, 
+  FaFolderOpen, 
+  FaShieldAlt, 
+  FaLink, 
+  FaCheckCircle,
+  FaArrowRight
 } from 'react-icons/fa';
-import './Dashboard.css';
+import "./Dashboard.css";
 
 const Dashboard = () => {
+  const [stats, setStats] = useState({
+    activePatients: 0,
+    networkName: "Connecting...",
+    walletConnected: false,
+    doctorAddress: ""
+  });
+
+  useEffect(() => {
+    const fetchDashboardState = async () => {
+      if (window.ethereum) {
+        try {
+          const provider = new ethers.BrowserProvider(window.ethereum);
+          const signer = await provider.getSigner();
+          const address = await signer.getAddress();
+          const network = await provider.getNetwork();
+          
+          const stored = JSON.parse(localStorage.getItem(`doctorPatients_${address}`) || '[]');
+          
+          setStats({
+            activePatients: stored.length,
+            networkName: network.name === 'unknown' ? 'Hardhat / Local' : network.name,
+            walletConnected: true,
+            doctorAddress: address
+          });
+        } catch (err) {
+          console.error("Dashboard sync error:", err);
+        }
+      }
+    };
+    fetchDashboardState();
+  }, []);
+
   return (
-    <>
-      <div className="doctor-header">
-        <div className="search-bar">
-          <FaSearch />
-          <input type="text" placeholder="Search by Wallet Address (0x...) or Patient ID" />
+    <div className="dashboard-container">
+      {/* Header Section */}
+      <header className="dashboard-header">
+        <div className="header-text">
+          <h1>Doctor <span>Portal</span></h1>
+          <p>Secure Blockchain Medical Records Management System</p>
         </div>
-        <div className="header-info">
-          <span className="chain-info">
-            Chain: <strong>Sepolia Testnet</strong>
-          </span>
-          <img
-            src="https://i.pravatar.cc/40?img=12"
-            className="doctor-avatar"
-            alt="Doctor Avatar"
-          />
+        <div className={`connection-badge ${stats.walletConnected ? 'online' : 'offline'}`}>
+          {stats.walletConnected && <span className="pulse-dot"></span>}
+          {stats.walletConnected ? "Blockchain Live" : "Connection Offline"}
         </div>
-      </div>
+      </header>
 
-      <div className="dashboard-grid">
-        <div className="left-col">
-          <div className="card">
-            <div className="card-header">
-              <div className="card-title">
-                <FaExclamationTriangle style={{ color: 'var(--risk)' }} /> High Risk Alerts (ML-Powered)
-              </div>
-              <span style={{ fontSize: '0.75rem', color: '#64748B' }}>Updating in real-time</span>
-            </div>
-
-            <div className="patient-row">
-              <div><strong>Sarah Connor</strong><br /><small>Last Visit: 2 days ago</small></div>
-              <div className="risk-score high-risk">88% Diabetes Risk</div>
-              <button className="btn-view" onClick={() => console.log('View patient data')}>View Decrypted Data</button>
-            </div>
-            <div className="patient-row">
-              <div><strong>John Doe</strong><br /><small>Last Visit: 1 week ago</small></div>
-              <div className="risk-score" style={{ background: '#FEF3C7', color: '#92400E' }}>62% Hypertension</div>
-              <button className="btn-view" onClick={() => console.log('View patient data')}>View Decrypted Data</button>
-            </div>
-            <div className="patient-row">
-              <div><strong>Ellen Ripley</strong><br /><small>Last Visit: Yesterday</small></div>
-              <div className="risk-score" style={{ background: '#D1FAE5', color: '#065F46' }}>12% Stable</div>
-              <button className="btn-view" onClick={() => console.log('View patient data')}>View Decrypted Data</button>
-            </div>
-          </div>
-
-          <div className="card">
-            <div className="card-title"><FaRobot style={{ color: 'var(--accent)' }} /> Smart Summaries (NLP)</div>
-            <div style={{ marginTop: '20px' }}>
-              <p style={{ fontSize: '0.9rem', fontWeight: 600 }}>Latest Scan: Blood_Report_Jan2026.pdf</p>
-              <div className="summary-box">
-                <p style={{ fontSize: '0.85rem', lineHeight: '1.5' }}>
-                  Patient shows elevated HbA1c (7.2%). Fasting glucose is 126 mg/dL. AI recommends immediate lifestyle intervention and potential Metformin startup.
-                </p>
-                <span className="hash-code">IPFS CID: QmXoyp...78hj | Verified by AI-Node #4</span>
-              </div>
-            </div>
+      {/* Stats Cards */}
+      <div className="stats-grid">
+        <div className="stat-card">
+          <div className="stat-icon patient-bg"><FaUsers /></div>
+          <div className = "stat-info">
+            <h3>{stats.activePatients}</h3>
+            <p>Authorized Patients</p>
           </div>
         </div>
 
-        <div className="right-col">
-          <div className="card" style={{ borderTop: '4px solid var(--accent)' }}>
-            <div className="card-title"><FaLink /> Blockchain Access</div>
-            <div style={{ marginTop: '20px' }}>
-              <button className="btn-view" style={{ width: '100%', marginBottom: '20px', padding: '12px' }} onClick={() => console.log('Request patient access')}>
-                + Request Patient Access
-              </button>
-
-              <div style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: '10px' }}>Pending Requests</div>
-              <div className="patient-row" style={{ padding: '10px 0' }}>
-                <span style={{ fontSize: '0.8rem' }}>0x8f2a...b9c1</span>
-                <span className="status-pill pending">PENDING</span>
-              </div>
-              <div className="patient-row" style={{ padding: '10px 0' }}>
-                <span style={{ fontSize: '0.8rem' }}>0x3d4e...a5f2</span>
-                <span className="status-pill approved">APPROVED</span>
-              </div>
-              <p style={{ fontSize: '0.7rem', color: '#94A3B8', marginTop: '15px' }}>Note: Access is cryptographically revoked after 24 hours.</p>
-            </div>
+        <div className="stat-card">
+          <div className="stat-icon vault-bg"><FaFolderOpen /></div>
+          <div className="stat-info">
+            <h3>Encrypted</h3>
+            <p>Storage Integrity</p>
           </div>
+        </div>
 
-          <div className="card">
-            <div className="card-title"><FaPills style={{ color: 'var(--success)' }} /> Adherence Logs</div>
-            <p style={{ fontSize: '0.8rem', color: '#64748B', marginTop: '10px' }}>Verified Behavioral History</p>
-            <div style={{ textAlign: 'center', marginTop: '15px' }}>
-              <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--success)' }}>94%</div>
-              <small>Patient Trust Score</small>
-            </div>
+        <div className="stat-card">
+          <div className="stat-icon network-bg"><FaShieldAlt /></div>
+          <div className="stat-info">
+            <h3>{stats.networkName.toUpperCase()}</h3>
+            <p>Active Network</p>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-icon wallet-bg">
+            {stats.walletConnected ? <FaCheckCircle style={{color: '#10b981'}}/> : <FaLink />}
+          </div>
+          <div className="stat-info">
+            <h3>{stats.walletConnected ? "Linked" : "Disconnected"}</h3>
+            <p>MetaMask Status</p>
           </div>
         </div>
       </div>
-    </>
+
+      {/* Full-Width Quick Access Section */}
+      <div className="dashboard-content-full">
+        <section className="dashboard-section actions">
+          <h3>Quick Access</h3>
+          <div className="action-grid-full">
+            <div className="action-card-item" onClick={() => window.location.href='/doctor/patients'}>
+              <div className="action-details">
+                <h4>Medical Vaults</h4>
+                <p>View decrypted health records & images</p>
+              </div>
+              <FaArrowRight />
+            </div>
+            
+            <div className="action-card-item" onClick={() => window.location.href='/doctor/access'}>
+              <div className="action-details">
+                <h4>Access Manager</h4>
+                <p>Request new permissions from patients</p>
+              </div>
+              <FaArrowRight />
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
   );
 };
 

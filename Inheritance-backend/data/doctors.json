@@ -33,5 +33,10 @@
     "id": 7,
     "name": "Dr. Harsh Jagtap",
     "wallet": "0xAeD7F0B287c8258585655d587a537bE08AD45067"
+  },
+  {
+    "id": 8,
+    "name": "Dr. Smith",
+    "wallet": "0x61Ea34dC4F81366E4c5813BE2dd4128E47f53FE3"
   }
 ]

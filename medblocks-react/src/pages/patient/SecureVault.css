@@ -884,3 +884,99 @@ body {
         text-align: center;
     }
 }
+
+/* SecureVault Toast Notification Styling */
+.vault-toast {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 320px;
+  background: #1e293b; /* Deep Slate - Blockchain Theme */
+  color: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+  z-index: 9999;
+  overflow: hidden;
+  border: 1px solid #334155;
+  animation: slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.toast-content {
+  padding: 16px;
+}
+
+.toast-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.toast-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.toast-success-icon {
+  color: #10b981; /* Emerald Green */
+}
+
+.toast-close {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
+}
+
+.toast-close:hover {
+  color: white;
+}
+
+.toast-file-name {
+  font-size: 0.85rem;
+  color: #cbd5e1;
+  margin-bottom: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.etherscan-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #3b82f6;
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+
+.etherscan-link:hover {
+  color: #60a5fa;
+}
+
+/* 8-Second Progress Bar */
+.toast-timer-bar {
+  height: 4px;
+  background: #3b82f6;
+  width: 100%;
+  animation: toastProgress 8s linear forwards;
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes toastProgress {
+  from { width: 100%; }
+  to { width: 0%; }
+}

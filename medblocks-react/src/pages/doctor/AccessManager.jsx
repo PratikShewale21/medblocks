@@ -1,154 +1,198 @@
-import React, { useState } from 'react';
-import { FaSearch, FaLink, FaFileExport, FaUserPlus, FaEllipsisV, FaUserTimes, FaCheck, FaTimes, FaCircle, FaClock, FaBell, FaUser } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react';
+import { ethers } from 'ethers';
+import axios from 'axios';
+import { 
+  FaSearch, 
+  FaFileExport, 
+  FaUserPlus, 
+  FaEllipsisV, 
+  FaUserTimes, 
+  FaCheck, 
+  FaTimes, 
+  FaCircle, 
+  FaClock, 
+  FaBell, 
+  FaUser,
+  FaSpinner
+} from 'react-icons/fa';
 import './AccessManager.css';
+
+/* ================= WALLET CONNECTION ================= */
+const connectWallet = async () => {
+  if (!window.ethereum) {
+    alert("Please install MetaMask!");
+    return null;
+  }
+  await window.ethereum.request({ method: "eth_requestAccounts" });
+  const provider = new ethers.BrowserProvider(window.ethereum);
+  return await provider.getSigner();
+};
 
 const AccessManager = () => {
   const [activeTab, setActiveTab] = useState('active');
   const [query, setQuery] = useState('');
+  const [doctorWallet, setDoctorWallet] = useState('');
+  const [loading, setLoading] = useState(true);
 
-  const [rows, setRows] = useState([
-    {
-      id: 'DS',
-      name: 'Dr. Sarah Johnson',
-      email: 'sarah.j@example.com',
-      role: 'Doctor',
-      permissions: ['View Records', 'Add Notes'],
-      lastAccessed: '2 hours ago',
-      status: 'active'
-    },
-    {
-      id: 'RN',
-      name: 'Nurse Robert Chen',
-      email: 'robert.c@example.com',
-      role: 'Nurse',
-      permissions: ['View Records'],
-      lastAccessed: '1 day ago',
-      status: 'active'
-    },
-    {
-      id: 'AM',
-      name: 'Dr. Michael Brown',
-      email: 'michael.b@example.com',
-      role: 'Specialist',
-      permissions: ['View Records', 'Add Notes', 'Request Tests'],
-      lastAccessed: 'Pending',
-      status: 'pending'
+  // Data States
+  const [patients, setPatients] = useState([]);
+  const [sentRequests, setSentRequests] = useState([]);
+  const [newPatient, setNewPatient] = useState({ name: '', wallet: '' });
+
+  /* ================= INITIALIZATION & SYNC ================= */
+  
+  // Only fetches the data, DOES NOT prompt MetaMask
+  const fetchPatientData = async (docAddress) => {
+    try {
+      // 1. Load requests sent by THIS doctor
+      const allRequests = JSON.parse(localStorage.getItem('patientAccessRequests') || '[]');
+      const myRequests = allRequests.filter(
+        req => req.doctorWallet.toLowerCase() === docAddress.toLowerCase()
+      );
+      setSentRequests(myRequests);
+
+      // 2. Load the doctor's patient list and check REAL blockchain status
+      const storedPatients = JSON.parse(localStorage.getItem(`doctorPatients_${docAddress}`) || '[]');
+      const updatedPatients = [];
+
+      for (let p of storedPatients) {
+        try {
+          // Check the smart contract via backend
+          const res = await axios.get("http://localhost:8000/access/check", {
+            params: {
+              patient: p.wallet,
+              doctor: docAddress
+            }
+          });
+          
+          updatedPatients.push({
+            ...p,
+            status: res.data.hasAccess ? 'active' : 'revoked'
+          });
+        } catch (err) {
+          console.error("Failed to check access for", p.wallet, err);
+          updatedPatients.push(p); // Keep existing status if network fails
+        }
+      }
+
+      setPatients(updatedPatients);
+    } catch (err) {
+      console.error("Error loading patient data:", err);
     }
-  ]);
+  };
 
-  const [newPatient, setNewPatient] = useState({
-    name: '',
-    wallet: ''
-  });
+  useEffect(() => {
+    let activeDocWallet = "";
 
-  const [patientRequests, setPatientRequests] = useState([
-    {
-      id: 1,
-      patientName: 'Sarah Connor',
-      wallet: '0x8f2a...b9c1',
-      condition: 'Diabetes Type 2',
+    const initSetup = async () => {
+      try {
+        const signer = await connectWallet();
+        if (signer) {
+          activeDocWallet = await signer.getAddress();
+          setDoctorWallet(activeDocWallet);
+          await fetchPatientData(activeDocWallet);
+        }
+      } catch (err) {
+        console.error("Failed to initialize wallet", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initSetup();
+
+    // Only refresh the data every 5 seconds, not the wallet connection!
+    const interval = setInterval(() => {
+      if (activeDocWallet) {
+        fetchPatientData(activeDocWallet);
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  /* ================= ACTIONS ================= */
+  
+  const handleAddPatient = () => {
+    if (!newPatient.name || !newPatient.wallet) {
+      alert('Please fill in both patient name and wallet address');
+      return;
+    }
+
+    if (!ethers.isAddress(newPatient.wallet)) {
+      alert('Invalid Ethereum wallet address format.');
+      return;
+    }
+
+    if (!doctorWallet) {
+      alert('Wallet not connected. Please refresh and connect MetaMask.');
+      return;
+    }
+
+    // 1. Create a request that will appear on the patient's dashboard
+    const patientRequest = {
+      id: Date.now(),
+      doctorName: 'Dr. Smith', // Placeholder
+      doctorWallet: doctorWallet,
+      patientName: newPatient.name,
+      wallet: newPatient.wallet, // Patient's wallet
       requestedAccess: 'Full Medical Records',
-      timestamp: '30 minutes ago',
+      timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
       status: 'pending'
-    },
-    {
-      id: 2,
-      patientName: 'John Doe',
-      wallet: '0x3d4e...a5f2',
-      condition: 'Hypertension',
-      requestedAccess: 'Diagnostic Reports Only',
-      timestamp: '2 hours ago',
-      status: 'approved'
-    }
-  ]);
+    };
 
-  const filtered = rows.filter((r) => {
+    const existingRequests = JSON.parse(localStorage.getItem('patientAccessRequests') || '[]');
+    existingRequests.push(patientRequest);
+    localStorage.setItem('patientAccessRequests', JSON.stringify(existingRequests));
+
+    // 2. Add to doctor's personal roster of patients
+    const storedPatients = JSON.parse(localStorage.getItem(`doctorPatients_${doctorWallet}`) || '[]');
+    
+    if (!storedPatients.find(p => p.wallet.toLowerCase() === newPatient.wallet.toLowerCase())) {
+      storedPatients.push({
+        id: Date.now().toString(),
+        name: newPatient.name,
+        wallet: newPatient.wallet,
+        status: 'pending',
+        lastAccessed: 'Never'
+      });
+      localStorage.setItem(`doctorPatients_${doctorWallet}`, JSON.stringify(storedPatients));
+    }
+
+    setNewPatient({ name: '', wallet: '' });
+    alert(`Access request sent to ${newPatient.name}!`);
+    fetchPatientData(doctorWallet);
+  };
+
+  const handleCancelRequest = (requestId) => {
+    const allRequests = JSON.parse(localStorage.getItem('patientAccessRequests') || '[]');
+    const updatedRequests = allRequests.filter(req => req.id !== requestId);
+    localStorage.setItem('patientAccessRequests', JSON.stringify(updatedRequests));
+    fetchPatientData(doctorWallet);
+  };
+
+  /* ================= FILTERING ================= */
+  const filteredPatients = patients.filter((p) => {
     const tabMatch =
       activeTab === 'history' ? true :
-      activeTab === 'active' ? r.status === 'active' :
-      activeTab === 'pending' ? r.status === 'pending' :
-      activeTab === 'revoked' ? r.status === 'revoked' : true;
-    const text = `${r.name} ${r.email} ${r.role} ${r.permissions.join(' ')} ${r.lastAccessed} ${r.status}`.toLowerCase();
+      activeTab === 'active' ? p.status === 'active' :
+      activeTab === 'pending' ? p.status === 'pending' :
+      activeTab === 'revoked' ? p.status === 'revoked' : true;
+    const text = `${p.name} ${p.wallet}`.toLowerCase();
     return tabMatch && text.includes(query.toLowerCase());
   });
-
-  const setStatus = (rowId, status) => {
-    setRows((prev) => prev.map((r) => (r.id === rowId ? { ...r, status } : r)));
-  };
-
-  const handleAddPatient = () => {
-    if (newPatient.name && newPatient.wallet) {
-      // Create a request that will appear in patient's Share Access
-      const patientRequest = {
-        id: Date.now(),
-        doctorName: 'Dr. Sarah Johnson', // This would be the current logged-in doctor
-        doctorWallet: '0x9F2A...B9C1', // This would be the current doctor's wallet
-        patientName: newPatient.name,
-        patientWallet: newPatient.wallet,
-        requestedAccess: 'Full Medical Records Access',
-        timestamp: 'Just now',
-        status: 'pending'
-      };
-
-      // Store the request in localStorage for patient side to pick up
-      const existingRequests = JSON.parse(localStorage.getItem('patientAccessRequests') || '[]');
-      existingRequests.push(patientRequest);
-      localStorage.setItem('patientAccessRequests', JSON.stringify(existingRequests));
-
-      // Also add to doctor's own records for tracking
-      const newId = Math.max(...rows.map(r => parseInt(r.id) || 0), 0) + 1;
-      setRows((prev) => [...prev, {
-        id: newId.toString(),
-        name: newPatient.name,
-        email: `${newPatient.name.toLowerCase().replace(' ', '.')}@example.com`,
-        role: 'Patient',
-        permissions: ['View Records'],
-        lastAccessed: 'Never',
-        status: 'pending'
-      }]);
-      
-      setNewPatient({ name: '', wallet: '' });
-      alert(`Access request sent to ${newPatient.name}! They will need to approve it from their Share Access page.`);
-    } else {
-      alert('Please fill in both patient name and wallet address');
-    }
-  };
-
-  const handleApprovePatientRequest = (requestId) => {
-    const request = patientRequests.find(r => r.id === requestId);
-    if (request) {
-      setPatientRequests(prev => prev.map(req => 
-        req.id === requestId 
-          ? { ...req, status: 'approved' }
-          : req
-      ));
-      alert(`Access granted to ${request.patientName}!`);
-    }
-  };
-
-  const handleDeclinePatientRequest = (requestId) => {
-    setPatientRequests(prev => prev.map(req => 
-      req.id === requestId 
-        ? { ...req, status: 'declined' }
-        : req
-    ));
-  };
 
   return (
     <>
       <div className="access-manager-header">
         <div className="header-content">
           <h1>Access Manager</h1>
-          <p>Manage permissions and access requests for patient records</p>
+          <p>Manage permissions and request access to patient records</p>
         </div>
         <div className="header-actions">
-          <button className="btn-export" onClick={() => console.log('Export')}>
-            <FaFileExport />
-            <span>Export</span>
-          </button>
-          <button className="btn-grant" onClick={() => console.log('Grant Access')}>
+          <button className="btn-grant" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
             <FaUserPlus />
-            <span>Grant Access</span>
+            <span>Request Access</span>
           </button>
         </div>
       </div>
@@ -160,17 +204,18 @@ const AccessManager = () => {
             value={query} 
             onChange={(e) => setQuery(e.target.value)} 
             type="text" 
-            placeholder="Search by name, email, or role..." 
+            placeholder="Search patients by name or wallet address..." 
           />
         </div>
       </div>
 
       <div className="access-container">
+        
         {/* Add Patient Section */}
         <div className="add-patient-section">
           <div className="section-header">
             <FaUser />
-            <h2>Add Patient</h2>
+            <h2>Request Patient Access</h2>
           </div>
           <div className="add-patient-form">
             <div className="form-group">
@@ -184,7 +229,7 @@ const AccessManager = () => {
               />
             </div>
             <div className="form-group">
-              <label>Wallet Address</label>
+              <label>Patient Wallet Address</label>
               <input
                 type="text"
                 placeholder="0x..."
@@ -195,21 +240,21 @@ const AccessManager = () => {
             </div>
             <button className="btn-add-patient" onClick={handleAddPatient}>
               <FaUserPlus />
-              Add Patient
+              Send Request
             </button>
           </div>
         </div>
 
-        {/* Patient Requests Notifications */}
+        {/* Sent Requests Notifications */}
         <div className="notifications-section">
           <div className="section-header">
             <FaBell />
-            <h2>Patient Requests</h2>
+            <h2>Sent Access Requests</h2>
           </div>
-          <p className="section-subtitle">Patients requesting access to their medical records</p>
+          <p className="section-subtitle">Track the status of access requests you sent to patients</p>
           
           <div className="requests-grid">
-            {patientRequests.map((request) => (
+            {sentRequests.map((request) => (
               <div key={request.id} className="request-card">
                 <div className="request-header">
                   <div className="patient-info">
@@ -218,39 +263,33 @@ const AccessManager = () => {
                     </div>
                     <div className="patient-details">
                       <h3>{request.patientName}</h3>
-                      <p>Condition: {request.condition}</p>
-                      <span className="wallet-badge">{request.wallet}</span>
+                      <span className="wallet-badge">
+                        {request.wallet.slice(0,6)}...{request.wallet.slice(-4)}
+                      </span>
                     </div>
                   </div>
                   <div className="request-status">
                     {request.status === 'pending' && <span className="status-badge status-pending"><FaClock /> Pending</span>}
                     {request.status === 'approved' && <span className="status-badge status-active"><FaCircle /> Approved</span>}
-                    {request.status === 'declined' && <span className="status-badge status-revoked"><FaCircle /> Declined</span>}
+                    {request.status === 'declined' && <span className="status-badge status-revoked"><FaTimes /> Declined</span>}
                   </div>
                 </div>
                 
                 <div className="request-content">
                   <div className="request-details">
                     <div className="request-access">Requested: {request.requestedAccess}</div>
-                    <div className="request-time">{request.timestamp}</div>
+                    <div className="request-time">Sent: {request.timestamp}</div>
                   </div>
                 </div>
                 
                 <div className="request-actions">
                   {request.status === 'pending' ? (
-                    <>
-                      <button className="btn-approve" onClick={() => handleApprovePatientRequest(request.id)}>
-                        <FaCheck />
-                        Approve
-                      </button>
-                      <button className="btn-reject" onClick={() => handleDeclinePatientRequest(request.id)}>
-                        <FaTimes />
-                        Decline
-                      </button>
-                    </>
+                    <button className="btn-reject" onClick={() => handleCancelRequest(request.id)}>
+                      <FaTimes /> Cancel Request
+                    </button>
                   ) : (
                     <button className="btn-details" disabled>
-                      {request.status === 'approved' ? 'Approved' : 'Declined'}
+                      {request.status === 'approved' ? 'Patient Approved' : 'Patient Declined'}
                     </button>
                   )}
                 </div>
@@ -258,11 +297,11 @@ const AccessManager = () => {
             ))}
           </div>
           
-          {patientRequests.length === 0 && (
+          {sentRequests.length === 0 && (
             <div className="empty-requests">
               <FaBell />
-              <h3>No patient requests</h3>
-              <p>When patients request access, they'll appear here</p>
+              <h3>No pending requests</h3>
+              <p>Send a request above to access a patient's medical records.</p>
             </div>
           )}
         </div>
@@ -270,98 +309,79 @@ const AccessManager = () => {
         {/* Access Management Tabs */}
         <div className="access-tabs">
           <div className={`tab ${activeTab === 'active' ? 'active' : ''}`} onClick={() => setActiveTab('active')}>
-            <span className="tab-count">{rows.filter(r => r.status === 'active').length}</span>
-            Active Access
-          </div>
-          <div className={`tab ${activeTab === 'pending' ? 'active' : ''}`} onClick={() => setActiveTab('pending')}>
-            <span className="tab-count">{rows.filter(r => r.status === 'pending').length}</span>
-            Pending Requests
-          </div>
-          <div className={`tab ${activeTab === 'history' ? 'active' : ''}`} onClick={() => setActiveTab('history')}>
-            <span className="tab-count">{rows.length}</span>
-            Access History
+            <span className="tab-count">{patients.filter(p => p.status === 'active').length}</span>
+            Active Patients
           </div>
           <div className={`tab ${activeTab === 'revoked' ? 'active' : ''}`} onClick={() => setActiveTab('revoked')}>
-            <span className="tab-count">{rows.filter(r => r.status === 'revoked').length}</span>
-            Revoked
+            <span className="tab-count">{patients.filter(p => p.status === 'revoked').length}</span>
+            No Access / Revoked
+          </div>
+          <div className={`tab ${activeTab === 'history' ? 'active' : ''}`} onClick={() => setActiveTab('history')}>
+            <span className="tab-count">{patients.length}</span>
+            All Patients
           </div>
         </div>
 
-        <div className="access-grid">
-          {filtered.map((r) => (
-            <div key={r.id} className="access-card">
-              <div className="card-header">
-                <div className="user-info">
-                  <div className="user-avatar">{r.id}</div>
-                  <div className="user-details">
-                    <h3>{r.name}</h3>
-                    <p>{r.email}</p>
-                    <span className="role-badge">{r.role}</span>
+        {loading ? (
+           <div className="empty-state">
+              <FaSpinner className="spinner-icon" style={{fontSize: '2rem', animation: 'spin 1s linear infinite'}} />
+              <h3>Syncing with Blockchain...</h3>
+           </div>
+        ) : (
+          <div className="access-grid">
+            {filteredPatients.map((p) => (
+              <div key={p.id} className="access-card">
+                <div className="card-header">
+                  <div className="user-info">
+                    <div className="user-avatar"><FaUser /></div>
+                    <div className="user-details">
+                      <h3>{p.name}</h3>
+                      <p>{p.wallet.slice(0,8)}...{p.wallet.slice(-4)}</p>
+                      <span className="role-badge">Patient</span>
+                    </div>
                   </div>
-                </div>
-                <div className="status-section">
-                  {r.status === 'active' && <span className="status-badge status-active"><FaCircle /> Active</span>}
-                  {r.status === 'pending' && <span className="status-badge status-pending"><FaClock /> Pending</span>}
-                  {r.status === 'revoked' && <span className="status-badge status-revoked"><FaCircle /> Revoked</span>}
-                </div>
-              </div>
-              
-              <div className="card-content">
-                <div className="permissions-section">
-                  <h4>Permissions</h4>
-                  <div className="permissions-list">
-                    {r.permissions.map((p) => (
-                      <span key={p} className="permission-tag">{p}</span>
-                    ))}
+                  <div className="status-section">
+                    {p.status === 'active' && <span className="status-badge status-active"><FaCircle /> Active Access</span>}
+                    {p.status === 'pending' && <span className="status-badge status-pending"><FaClock /> Pending</span>}
+                    {p.status === 'revoked' && <span className="status-badge status-revoked"><FaCircle /> Revoked</span>}
                   </div>
                 </div>
                 
-                <div className="meta-section">
-                  <div className="meta-item">
-                    <FaClock />
-                    <span>{r.lastAccessed}</span>
+                <div className="card-content">
+                  <div className="permissions-section">
+                    <h4>Permissions</h4>
+                    <div className="permissions-list">
+                      <span className="permission-tag">View Medical Records</span>
+                      {p.status === 'active' && <span className="permission-tag">AI Summaries</span>}
+                    </div>
                   </div>
                 </div>
+                
+                <div className="card-actions">
+                  {p.status === 'active' ? (
+                    <button className="btn-approve" onClick={() => window.location.href = `/doctor/patients?wallet=${p.wallet}`}>
+                      <FaEllipsisV /> View Records
+                    </button>
+                  ) : (
+                    <button className="btn-details" disabled>
+                      Requires Patient Approval
+                    </button>
+                  )}
+                </div>
               </div>
-              
-              <div className="card-actions">
-                {r.status === 'pending' ? (
-                  <>
-                    <button className="btn-approve" onClick={() => setStatus(r.id, 'active')}>
-                      <FaCheck />
-                      Approve
-                    </button>
-                    <button className="btn-reject" onClick={() => setStatus(r.id, 'revoked')}>
-                      <FaTimes />
-                      Reject
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button className="btn-revoke" onClick={() => setStatus(r.id, 'revoked')}>
-                      <FaUserTimes />
-                      Revoke
-                    </button>
-                    <button className="btn-details" onClick={() => console.log('View details', r.id)}>
-                      <FaEllipsisV />
-                      Details
-                    </button>
-                  </>
-                )}
+            ))}
+            
+            {filteredPatients.length === 0 && (
+              <div className="empty-state">
+                <div className="empty-icon">
+                  <FaSearch />
+                </div>
+                <h3>No patients found</h3>
+                <p>Try sending a request to a new patient wallet above.</p>
               </div>
-            </div>
-          ))}
-          
-          {filtered.length === 0 && (
-            <div className="empty-state">
-              <div className="empty-icon">
-                <FaSearch />
-              </div>
-              <h3>No results found</h3>
-              <p>Try adjusting your search criteria or selecting a different tab.</p>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
     </>
   );

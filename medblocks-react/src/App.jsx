@@ -17,6 +17,7 @@ import SecureVault from './pages/patient/SecureVault';
 import PillTracker from './pages/patient/PillTracker';
 import ShareAccess from './pages/patient/ShareAccess';
 import ReportSummary from './pages/patient/ReportSummary';
+import PatientDetails from './pages/doctor/PatientDetails';
 
 // Context
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -66,6 +67,7 @@ function App() {
             <Route index element={<Dashboard />} />
             <Route path="patients" element={<Patients />} />
             <Route path="access" element={<AccessManager />} />
+            <Route path="patient-details" element={<PatientDetails />} />
           </Route>
           
           {/* Patient Route */}
@@ -90,5 +92,6 @@ function App() {
     </LayoutWrapper>
   );
 }
+
 
 export default App;

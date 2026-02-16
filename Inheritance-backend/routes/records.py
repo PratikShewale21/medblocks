@@ -1,10 +1,12 @@
 import os
+import io
 import uuid
 import requests
 import tempfile
+import mimetypes # Added to detect if file is PDF, JPG, or PNG
 
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import StreamingResponse
 from web3 import Web3
 
 from dotenv import load_dotenv
@@ -130,7 +132,7 @@ def fetch_records(patient_address: str, requester_address: str):
 
 
 # -----------------------------------
-# View & Decrypt Record
+# View & Decrypt Record (FIXED FOR IMAGES)
 # -----------------------------------
 
 @router.get("/view/{cid}")
@@ -146,41 +148,44 @@ def view_record(
     if not Web3.is_address(requester_address):
         raise HTTPException(400, "Invalid requester address")
 
-    # ✅ Allow patient himself
+    # ✅ Security check (Blockchain Verification)
     if patient_address.lower() != requester_address.lower():
         if not has_access(patient_address, requester_address):
             raise HTTPException(403, "Access denied")
 
-    # Download encrypted file from IPFS
+    # 1. Download encrypted file from IPFS
     url = f"https://gateway.pinata.cloud/ipfs/{cid}"
     res = requests.get(url, timeout=20)
 
     if res.status_code != 200 or not res.content:
         raise HTTPException(404, "File not found on IPFS")
 
+    # 2. Decrypt into RAM
     try:
         decrypted = fernet.decrypt(res.content)
     except Exception:
         raise HTTPException(500, "Decryption failed")
 
-    # Save decrypted temp file
-    dec_path = os.path.join(TEMP_DIR, f"{cid}.out")
-
-    with open(dec_path, "wb") as f:
-        f.write(decrypted)
-
-    # Get original filename
-    records = get_all_records(patient_address)
-
-    filename = "medical_record"
-
-    for r in records:
+    # 3. Dynamic MIME Type Detection
+    # Get the original filename from blockchain to know the extension (.jpg, .pdf, etc.)
+    records_list = get_all_records(patient_address)
+    filename = "document.pdf" # Fallback
+    for r in records_list:
         if r["cid"] == cid:
-            filename = r.get("filename") or "medical_record"
+            filename = r.get("filename") or "document.pdf"
             break
+    
+    # Guess the type (e.g., 'image/png' or 'application/pdf')
+    mime_type, _ = mimetypes.guess_type(filename)
+    if not mime_type:
+        mime_type = "application/octet-stream"
 
-    return FileResponse(
-        path=dec_path,
-        filename=filename,
-        media_type="application/octet-stream"
+    # 4. Stream response (RAM only, no temp file on disk)
+    return StreamingResponse(
+        io.BytesIO(decrypted),
+        media_type=mime_type,
+        headers={
+            "Content-Disposition": "inline",
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0"
+        }
     )

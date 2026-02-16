@@ -9,7 +9,7 @@ import {
   FaSignOutAlt,
   FaPlus,
   FaBell,
-  FaSpinner // <--- ADDED: Spinner icon
+  FaSpinner 
 } from "react-icons/fa";
 import "./ShareAccess.css";
 
@@ -34,21 +34,16 @@ const ShareAccess = () => {
       if (!signer) return;
 
       const patient = await signer.getAddress();
-
       setPatientWallet(patient);
 
       const res = await axios.get("http://localhost:8000/access/doctors");
-
       const list = res.data;
-
       const updated = [];
 
+      // Check blockchain status for all doctors
       for (let d of list) {
         const check = await axios.get("http://localhost:8000/access/check", {
-          params: {
-            patient,
-            doctor: d.wallet,
-          },
+          params: { patient, doctor: d.wallet },
         });
 
         updated.push({
@@ -58,9 +53,29 @@ const ShareAccess = () => {
       }
 
       setDoctors(updated);
+
+      // ==========================================
+      // NEW: AUTO-REMOVE ACCEPTED REQUESTS
+      // ==========================================
+      const storedReqs = JSON.parse(localStorage.getItem("patientAccessRequests") || "[]");
+      
+      // Filter out requests where the doctor is ALREADY active on the blockchain
+      const pendingReqs = storedReqs.filter(req => {
+        const docNode = updated.find(d => d.wallet.toLowerCase() === req.doctorWallet.toLowerCase());
+        return !(docNode && docNode.active); // Keep it ONLY if they are NOT active
+      });
+      
+      // If we removed any, update local storage and UI
+      if (storedReqs.length !== pendingReqs.length) {
+         localStorage.setItem("patientAccessRequests", JSON.stringify(pendingReqs));
+         setRequests(pendingReqs);
+      } else {
+         // Otherwise just load normally
+         setRequests(storedReqs);
+      }
+
     } catch (err) {
       console.error(err);
-      alert("Failed to load doctors");
     }
   };
 
@@ -71,47 +86,29 @@ const ShareAccess = () => {
   const [doctors, setDoctors] = useState([]);
   const [patientWallet, setPatientWallet] = useState("");
   const [requests, setRequests] = useState([]);
-  
-  // <--- ADDED: Track which wallet is currently processing a blockchain transaction --->
   const [processingWallets, setProcessingWallets] = useState({});
 
   const CONTRACT_ADDRESS = import.meta.env.VITE_ACCESS_CONTROL_ADDRESS;
-  console.log("Contract:", CONTRACT_ADDRESS);
-
-  // Load requests from localStorage (from doctor side)
-  React.useEffect(() => {
-    const storedRequests = JSON.parse(
-      localStorage.getItem("patientAccessRequests") || "[]",
-    );
-    setRequests(storedRequests);
-  }, []);
 
   // Periodically check for new requests
   React.useEffect(() => {
     const interval = setInterval(() => {
-      const storedRequests = JSON.parse(
-        localStorage.getItem("patientAccessRequests") || "[]",
-      );
-      setRequests(storedRequests);
-    }, 2000); // Check every 2 seconds
+      // We only pull new requests, the cleanup happens in loadDoctors
+      const storedRequests = JSON.parse(localStorage.getItem("patientAccessRequests") || "[]");
+      // Prevent overwriting if lengths match (avoids UI flicker)
+      setRequests(prev => storedRequests.length !== prev.length ? storedRequests : prev);
+    }, 2000); 
 
     return () => clearInterval(interval);
   }, []);
 
-  const [newDoctor, setNewDoctor] = useState({
-    name: "",
-    wallet: "",
-  });
-
+  const [newDoctor, setNewDoctor] = useState({ name: "", wallet: "" });
   const [activeTab, setActiveTab] = useState("shared");
 
   const handleToggleAccess = async (doctor) => {
     try {
-      // Optimistic UI update (instant change)
       setDoctors((prev) =>
-        prev.map((d) =>
-          d.wallet === doctor.wallet ? { ...d, active: !doctor.active } : d,
-        ),
+        prev.map((d) => d.wallet === doctor.wallet ? { ...d, active: !doctor.active } : d),
       );
 
       if (doctor.active) {
@@ -120,45 +117,23 @@ const ShareAccess = () => {
         await grantAccess(doctor.wallet);
       }
 
-      // Re-sync with blockchain (safety)
       await loadDoctors();
     } catch (err) {
       console.error(err);
-
-      // Rollback if failed
       await loadDoctors();
-
       alert("Transaction failed");
     }
   };
 
   const handleDeclineRequest = (requestId) => {
-    setRequests((prev) =>
-      prev.map((req) =>
-        req.id === requestId ? { ...req, status: "declined" } : req,
-      ),
-    );
-
-    // Update localStorage to sync with doctor side
-    const updatedRequests = requests.map((req) =>
-      req.id === requestId ? { ...req, status: "declined" } : req,
-    );
-    localStorage.setItem(
-      "patientAccessRequests",
-      JSON.stringify(updatedRequests),
-    );
+    setRequests((prev) => prev.map((req) => req.id === requestId ? { ...req, status: "declined" } : req));
+    const updatedRequests = requests.map((req) => req.id === requestId ? { ...req, status: "declined" } : req);
+    localStorage.setItem("patientAccessRequests", JSON.stringify(updatedRequests));
   };
 
   const handleAddDoctor = async () => {
-    if (!newDoctor.name || !newDoctor.wallet) {
-      alert("Fill all fields");
-      return;
-    }
-
-    if (!ethers.isAddress(newDoctor.wallet)) {
-      alert("Invalid wallet");
-      return;
-    }
+    if (!newDoctor.name || !newDoctor.wallet) return alert("Fill all fields");
+    if (!ethers.isAddress(newDoctor.wallet)) return alert("Invalid wallet");
 
     try {
       await axios.post("http://localhost:8000/access/add-doctor", {
@@ -167,9 +142,7 @@ const ShareAccess = () => {
       });
 
       setNewDoctor({ name: "", wallet: "" });
-
       await loadDoctors();
-
       alert("Doctor added!");
     } catch (err) {
       console.error(err);
@@ -177,42 +150,7 @@ const ShareAccess = () => {
     }
   };
 
-  const handleApproveRequest = (requestId) => {
-    const request = requests.find((r) => r.id === requestId);
-    if (request) {
-      const newId = Math.max(...doctors.map((d) => d.id), 0) + 1;
-      setDoctors((prev) => [
-        ...prev,
-        {
-          id: newId,
-          name: request.doctorName,
-          wallet: request.doctorWallet,
-          active: true,
-        },
-      ]);
-
-      // Update request status
-      setRequests((prev) =>
-        prev.map((req) =>
-          req.id === requestId ? { ...req, status: "approved" } : req,
-        ),
-      );
-
-      // Update localStorage to sync with doctor side
-      const updatedRequests = requests.map((req) =>
-        req.id === requestId ? { ...req, status: "approved" } : req,
-      );
-      localStorage.setItem(
-        "patientAccessRequests",
-        JSON.stringify(updatedRequests),
-      );
-
-      alert(`Access granted to ${request.doctorName}!`);
-    }
-  };
-
   const grantAccess = async (doctorWallet) => {
-    // <--- ADDED: Start loading state for this wallet --->
     setProcessingWallets((prev) => ({ ...prev, [doctorWallet]: true }));
 
     try {
@@ -229,37 +167,27 @@ const ShareAccess = () => {
 
       const signature = await signer.signMessage(ethers.getBytes(hash));
 
-      // Call backend
-      const res = await axios.post(
-        "http://localhost:8000/access/gasless-grant",
-        {
-          patient,
-          doctor: doctorWallet,
-          nonce,
-          signature,
-        },
-      );
+      const res = await axios.post("http://localhost:8000/access/gasless-grant", {
+        patient,
+        doctor: doctorWallet,
+        nonce,
+        signature,
+      });
 
       const txHash = res.data.tx_hash;
-
-      // ⏳ WAIT for blockchain confirmation
       const provider = new ethers.BrowserProvider(window.ethereum);
       await provider.waitForTransaction(txHash);
 
-      // ✅ Now reload after mined
-      await loadDoctors();
+      await loadDoctors(); // This will trigger the auto-cleanup!
     } catch (err) {
       console.error(err);
-      alert("Grant failed");
       await loadDoctors();
     } finally {
-      // <--- ADDED: Stop loading state regardless of success or failure --->
       setProcessingWallets((prev) => ({ ...prev, [doctorWallet]: false }));
     }
   };
 
   const revokeAccess = async (doctorWallet) => {
-    // <--- ADDED: Start loading state for this wallet --->
     setProcessingWallets((prev) => ({ ...prev, [doctorWallet]: true }));
 
     try {
@@ -276,33 +204,47 @@ const ShareAccess = () => {
 
       const signature = await signer.signMessage(ethers.getBytes(hash));
 
-      // Call backend
-      const res = await axios.post(
-        "http://localhost:8000/access/gasless-revoke",
-        {
-          patient,
-          doctor: doctorWallet,
-          nonce,
-          signature,
-        },
-      );
+      const res = await axios.post("http://localhost:8000/access/gasless-revoke", {
+        patient,
+        doctor: doctorWallet,
+        nonce,
+        signature,
+      });
 
       const txHash = res.data.tx_hash;
-
-      // ⏳ WAIT for blockchain confirmation
       const provider = new ethers.BrowserProvider(window.ethereum);
       await provider.waitForTransaction(txHash);
 
-      // ✅ Reload after mined
       await loadDoctors();
     } catch (err) {
       console.error(err);
-      alert("Revoke failed");
       await loadDoctors();
     } finally {
-      // <--- ADDED: Stop loading state regardless of success or failure --->
       setProcessingWallets((prev) => ({ ...prev, [doctorWallet]: false }));
     }
+  };
+
+  const handleApproveRequest = async (requestId) => {
+    const request = requests.find((r) => r.id === requestId);
+    if (!request) return;
+
+    try {
+      // Save doctor to backend DB
+      await axios.post("http://localhost:8000/access/add-doctor", {
+        name: request.doctorName,
+        wallet: request.doctorWallet,
+      });
+    } catch (err) {
+      console.log("Doctor exists, continuing...");
+    }
+
+    // Set local status to approved
+    setRequests((prev) => prev.map((req) => req.id === requestId ? { ...req, status: "approved" } : req));
+    const updatedRequests = requests.map((req) => req.id === requestId ? { ...req, status: "approved" } : req);
+    localStorage.setItem("patientAccessRequests", JSON.stringify(updatedRequests));
+
+    // Trigger MetaMask
+    await grantAccess(request.doctorWallet);
   };
 
   return (
@@ -320,10 +262,6 @@ const ShareAccess = () => {
                 : "Not Connected"}
             </span>
           </div>
-          <button className="logout-btn">
-            <FaSignOutAlt />
-            Logout
-          </button>
         </div>
       </header>
 
@@ -349,9 +287,7 @@ const ShareAccess = () => {
                 type="text"
                 placeholder="Enter doctor's name"
                 value={newDoctor.name}
-                onChange={(e) =>
-                  setNewDoctor({ ...newDoctor, name: e.target.value })
-                }
+                onChange={(e) => setNewDoctor({ ...newDoctor, name: e.target.value })}
                 className="form-input"
               />
             </div>
@@ -361,9 +297,7 @@ const ShareAccess = () => {
                 type="text"
                 placeholder="0x..."
                 value={newDoctor.wallet}
-                onChange={(e) =>
-                  setNewDoctor({ ...newDoctor, wallet: e.target.value })
-                }
+                onChange={(e) => setNewDoctor({ ...newDoctor, wallet: e.target.value })}
                 className="form-input"
               />
             </div>
@@ -398,11 +332,8 @@ const ShareAccess = () => {
 
           <div className="doctors-list">
             {doctors
-              .filter((doctor) =>
-                activeTab === "shared" ? doctor.active : !doctor.active,
-              )
+              .filter((doctor) => activeTab === "shared" ? doctor.active : !doctor.active)
               .map((doctor) => {
-                // <--- ADDED: Check if this specific doctor's wallet is processing --->
                 const isProcessing = processingWallets[doctor.wallet];
 
                 return (
@@ -418,16 +349,12 @@ const ShareAccess = () => {
                     </div>
                     <div className="dr-actions">
                       {isProcessing ? (
-                        // ONLY show the processing text/spinner when loading
                         <span className="status-label processing">
-                          <FaSpinner className="spinner-icon" /> Processing...
+                          <FaSpinner className="spinner-icon" style={{ animation: 'spin 1s linear infinite' }} /> Processing...
                         </span>
                       ) : (
-                        // Show BOTH the status label AND the toggle switch when NOT loading
                         <>
-                          <span
-                            className={`status-label ${doctor.active ? "status-active" : "status-revoked"}`}
-                          >
+                          <span className={`status-label ${doctor.active ? "status-active" : "status-revoked"}`}>
                             {doctor.active ? "ACTIVE" : "REVOKED"}
                           </span>
                           <label className="switch">
@@ -457,48 +384,75 @@ const ShareAccess = () => {
             Doctors requesting access to your medical records
           </p>
 
-          {requests.map((request) => (
-            <div key={request.id} className="req-item">
-              <div className="req-content">
-                <div className="req-doctor">{request.doctorName}</div>
-                <div className="req-hospital">{request.hospital}</div>
-                <div className="req-meta">
-                  <span>Wallet: {request.wallet}</span>
-                  <span>•</span>
-                  <span>{request.timestamp}</span>
+          {requests.map((request) => {
+            const isProcessing = processingWallets[request.doctorWallet];
+            
+            return (
+              <div key={request.id} className="req-item">
+                <div className="req-content">
+                  <div className="req-doctor">{request.doctorName}</div>
+                  <div className="req-hospital">{request.hospital || "MedBlocks Network"}</div>
+                  <div className="req-meta">
+                    <span>Wallet: {request.doctorWallet}</span>
+                    <span>•</span>
+                    <span>{request.timestamp}</span>
+                  </div>
+                  <div className="req-access">
+                    Requested: {request.requestedAccess}
+                  </div>
                 </div>
-                <div className="req-access">
-                  Requested: {request.requestedAccess}
-                </div>
-              </div>
-              <div className="req-buttons">
-                {request.status === "pending" ? (
-                  <>
+                
+                {/* DYNAMIC BUTTON LOGIC */}
+                <div className="req-buttons">
+                  {request.status === "pending" ? (
+                    <>
+                      <button
+                        className="btn-action btn-approve"
+                        onClick={() => handleApproveRequest(request.id)}
+                        disabled={isProcessing}
+                      >
+                        {isProcessing ? <><FaSpinner className="spinner-icon" style={{animation: 'spin 1s linear infinite'}}/> Processing...</> : "Approve"}
+                      </button>
+                      <button
+                        className="btn-action btn-decline"
+                        onClick={() => handleDeclineRequest(request.id)}
+                        disabled={isProcessing}
+                      >
+                        Decline
+                      </button>
+                    </>
+                  ) : request.status === "declined" ? (
+                    <>
+                      <button className="btn-action btn-decline" disabled>
+                        Declined
+                      </button>
+                      <button
+                        className="btn-action"
+                        style={{ backgroundColor: "#f59e0b", color: "white", marginLeft: "10px" }}
+                        onClick={() => handleApproveRequest(request.id)}
+                        disabled={isProcessing}
+                      >
+                        {isProcessing ? "Processing..." : "Approve Anyway"}
+                      </button>
+                    </>
+                  ) : (
                     <button
-                      className="btn-action btn-approve"
+                      className="btn-action"
+                      style={{ backgroundColor: isProcessing ? "#9ca3af" : "#f59e0b", color: "white" }}
                       onClick={() => handleApproveRequest(request.id)}
+                      disabled={isProcessing}
                     >
-                      Approve
+                      {isProcessing ? (
+                        <><FaSpinner className="spinner-icon" style={{animation: 'spin 1s linear infinite'}}/> Waiting for Signature...</>
+                      ) : (
+                        "Retry Signature"
+                      )}
                     </button>
-                    <button
-                      className="btn-action btn-decline"
-                      onClick={() => handleDeclineRequest(request.id)}
-                    >
-                      Decline
-                    </button>
-                  </>
-                ) : request.status === "declined" ? (
-                  <button className="btn-action btn-decline" disabled>
-                    Declined
-                  </button>
-                ) : (
-                  <button className="btn-action btn-approve" disabled>
-                    Approved
-                  </button>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           {requests.length === 0 && (
             <div className="empty-requests">

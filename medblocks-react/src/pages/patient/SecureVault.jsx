@@ -13,6 +13,8 @@ import {
   FaClock,
   FaUsers,
   FaNetworkWired,
+  FaTimes, // Import Cross Icon
+  FaExternalLinkAlt // Import Link Icon
 } from "react-icons/fa";
 import { useAuth } from "../../context/AuthContext";
 import "./SecureVault.css";
@@ -47,12 +49,22 @@ const SecureVault = () => {
   const [notes, setNotes] = useState("");
   const [accessStatus, setAccessStatus] = useState(null);
   const [showSecurityInfo, setShowSecurityInfo] = useState(false);
-  const [uploadSuccess, setUploadSuccess] = useState(null);
+  const [uploadSuccess, setUploadSuccess] = useState(null); // This now controls the Toast
   const [downloadingFile, setDownloadingFile] = useState(null);
 
   const fileInputRef = useRef(null);
 
-  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+  // REMOVED: MAX_FILE_SIZE limit
+
+  /* ================= TOAST TIMEOUT LOGIC ================= */
+  useEffect(() => {
+    if (uploadSuccess) {
+      const timer = setTimeout(() => {
+        setUploadSuccess(null);
+      }, 8000); // 8 Seconds timeout
+      return () => clearTimeout(timer);
+    }
+  }, [uploadSuccess]);
 
   const loadAccessStatus = async () => {
     try {
@@ -117,7 +129,7 @@ const SecureVault = () => {
           : "application/octet-stream",
         fileSize: "-",
         recordType: r.record_type,
-        uploadDate: "-", // Future enhancement: pull real date from SC
+        uploadDate: "-", 
         addedBy: "Patient",
         verified: true,
         ipfsHash: r.cid,
@@ -144,12 +156,7 @@ const SecureVault = () => {
   const handleFileSelect = (event) => {
     const file = event.target.files[0];
     if (file) {
-      if (file.size > MAX_FILE_SIZE) {
-        alert("File is too large! Please upload a file smaller than 10MB.");
-        // Reset the input so they can pick a new file
-        if (fileInputRef.current) fileInputRef.current.value = "";
-        return;
-      }
+      // REMOVED: Size check logic
       setSelectedFile(file);
       setUploadProgress(0);
       setUploadSuccess(null);
@@ -178,10 +185,7 @@ const SecureVault = () => {
     const files = e.dataTransfer.files;
     if (files.length > 0) {
       const file = files[0];
-      if (file.size > MAX_FILE_SIZE) {
-        alert("File is too large! Please drop a file smaller than 10MB.");
-        return;
-      }
+      // REMOVED: Size check logic
       setSelectedFile(file);
       setUploadProgress(0);
       setUploadSuccess(null);
@@ -218,7 +222,6 @@ const SecureVault = () => {
       form.append("patient_address", patient);
       form.append("record_type", recordType);
 
-      // Upload with Real-Time Progress
       const response = await axios.post(
         "http://localhost:8000/records/upload",
         form,
@@ -230,18 +233,13 @@ const SecureVault = () => {
             const percentCompleted = Math.round(
               (progressEvent.loaded * 100) / progressEvent.total
             );
-            // Cap at 90% while waiting for the blockchain transaction to be mined
             setUploadProgress(percentCompleted < 90 ? percentCompleted : 90);
           },
         }
       );
 
-      // Once the blockchain confirms, bump to 100%
       setUploadProgress(100);
-
-      // Wait a bit so blockchain + backend sync cleanly
       await new Promise((r) => setTimeout(r, 1500));
-
       await loadRecords();
 
       setUploadSuccess({
@@ -251,7 +249,6 @@ const SecureVault = () => {
         etherscanLink: `https://sepolia.etherscan.io/tx/${response.data.transaction_hash}`,
       });
 
-      // Reset form
       setSelectedFile(null);
       setNotes("");
       setRecordType("Prescription");
@@ -262,7 +259,6 @@ const SecureVault = () => {
       alert("Upload failed");
     } finally {
       setLoading(false);
-      // Don't reset uploadProgress to 0 immediately so the user can see it hit 100%
       setTimeout(() => setUploadProgress(0), 3000); 
     }
   };
@@ -272,10 +268,8 @@ const SecureVault = () => {
   const handleDownload = async (record) => {
     try {
       setDownloadingFile(record.cid);
-
       const signer = await connectWallet();
       if (!signer) return;
-
       const addr = await signer.getAddress();
 
       const res = await axios.get(
@@ -290,12 +284,10 @@ const SecureVault = () => {
       );
 
       const blob = new Blob([res.data]);
-
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
       link.download = record.fileName; 
       document.body.appendChild(link);
-
       link.click();
       document.body.removeChild(link);
     } catch (err) {
@@ -361,7 +353,7 @@ const SecureVault = () => {
               </div>
               <div className="upload-text">
                 <h4>Drag & drop your files here</h4>
-                <p>or click to browse (Max 10MB)</p>
+                <p>or click to browse</p>
               </div>
               <input
                 ref={fileInputRef}
@@ -607,47 +599,42 @@ const SecureVault = () => {
               recorded on the blockchain, ensuring data integrity and
               immutability.
             </p>
-            <p>
-              Only doctors you've granted access to can view your records, and
-              you maintain full control over who can see your medical
-              information.
-            </p>
-            <p>
-              The blockchain verification ensures that your records haven't been
-              tampered with since upload.
-            </p>
           </div>
         )}
       </section>
 
-      {/* Success Message */}
+      {/* ====================================================== */}
+      {/* UPDATED: TOAST NOTIFICATION (REPLACES OLD MODAL)        */}
+      {/* ====================================================== */}
       {uploadSuccess && (
-        <div className="success-message">
-          <FaCheckCircle className="success-icon" />
-          <div className="success-content">
-            <h4>Upload Successful!</h4>
-            <p>{uploadSuccess.fileName}</p>
-            <div className="success-details">
-              <div className="detail-item">
-                <span>IPFS Hash:</span>
-                <code>{uploadSuccess.ipfsHash}</code>
+        <div className="vault-toast">
+          <div className="toast-content">
+            <div className="toast-header">
+              <div className="toast-title">
+                <FaCheckCircle className="toast-success-icon" />
+                <span>Upload Confirmed</span>
               </div>
-              <div className="detail-item">
-                <span>Transaction:</span>
-                <code>{uploadSuccess.transactionHash}</code>
-              </div>
+              {/* CROSS ICON FOR MANUAL REMOVAL */}
+              <button className="toast-close" onClick={() => setUploadSuccess(null)}>
+                <FaTimes />
+              </button>
             </div>
-            <div className="etherscan-link">
-              <a
-                href={uploadSuccess.etherscanLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="etherscan-btn"
-              >
-                View on Etherscan
-              </a>
+            
+            <p className="toast-file-name">{uploadSuccess.fileName}</p>
+            
+            <div className="toast-links">
+               <a 
+                 href={uploadSuccess.etherscanLink} 
+                 target="_blank" 
+                 rel="noopener noreferrer" 
+                 className="etherscan-link"
+               >
+                 <FaExternalLinkAlt /> View on Etherscan
+               </a>
             </div>
           </div>
+          {/* VISUAL TIMEOUT PROGRESS BAR */}
+          <div className="toast-timer-bar"></div>
         </div>
       )}
     </div>
